@@ -47,28 +47,36 @@ def load_json_file(filename):
 def get_sido_list():
     """시도 목록 조회"""
     data = load_json_file('sgis_national_regions.json')
-    if data and 'sido' in data:
-        return jsonify(data['sido'])
+    if data and 'regions' in data:
+        # regions 객체를 배열로 변환
+        sido_list = []
+        for sido_code, sido_data in data['regions'].items():
+            sido_list.append({
+                'sido_cd': sido_code,
+                'sido_nm': sido_data.get('sido_name', ''),
+                'sigungu_count': len(sido_data.get('sigungu_list', []))
+            })
+        return jsonify(sido_list)
     return jsonify([])
 
 @app.route('/api/national/sido/<sido_code>')
 def get_sido_detail(sido_code):
     """시도 상세 정보"""
     data = load_json_file('sgis_national_regions.json')
-    if data and 'sido' in data:
-        for sido in data['sido']:
-            if sido.get('sido_cd') == sido_code:
-                return jsonify(sido)
+    if data and 'regions' in data and sido_code in data['regions']:
+        return jsonify(data['regions'][sido_code])
     return jsonify({})
 
 @app.route('/api/national/sigungu/<sigungu_code>')
 def get_sigungu_detail(sigungu_code):
     """시군구 상세 정보"""
     data = load_json_file('sgis_national_regions.json')
-    if data and 'sigungu' in data:
-        for sigungu in data['sigungu']:
-            if sigungu.get('sigungu_cd') == sigungu_code:
-                return jsonify(sigungu)
+    if data and 'regions' in data:
+        # 모든 시도에서 시군구 찾기
+        for sido_code, sido_data in data['regions'].items():
+            for sigungu in sido_data.get('sigungu_list', []):
+                if sigungu.get('sigungu_code') == sigungu_code:
+                    return jsonify(sigungu)
     return jsonify({})
 
 @app.route('/api/national/emdong/<emdong_code>')
