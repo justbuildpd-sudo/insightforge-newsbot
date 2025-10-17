@@ -121,25 +121,27 @@ function renderNationalList() {
     let html = '<div class="space-y-2">';
     
     allSido.forEach(sido => {
-        const isExpanded = expandedSidos.has(sido.code);
+        const sidoCode = sido.sido_cd || sido.code;
+        const sidoName = sido.sido_nm || sido.name;
+        const isExpanded = expandedSidos.has(sidoCode);
         const popText = sido.total_population ? `${sido.total_population.toLocaleString()}명` : '-';
         
         html += `
             <div>
                 <div class="font-semibold text-gray-900 px-3 py-2 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 border border-blue-200 flex items-center justify-between"
-                     onclick='toggleSido("${sido.code}")'>
+                     onclick='toggleSido("${sidoCode}")'>
                     <div class="flex items-center gap-2">
                         <svg class="w-3 h-3 transform transition-transform ${isExpanded ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
-                        <span class="text-sm font-bold">${sido.name}</span>
+                        <span class="text-sm font-bold">${sidoName}</span>
                     </div>
                     <div class="flex items-center gap-3 text-xs">
                         <span class="text-gray-600">${sido.sigungu_count}개 시군구</span>
                         <span class="text-blue-600 font-semibold">${popText}</span>
                     </div>
                 </div>
-                ${isExpanded ? `<div id="sido-${sido.code}" class="ml-4 mt-1"></div>` : ''}
+                ${isExpanded ? `<div id="sido-${sidoCode}" class="ml-4 mt-1"></div>` : ''}
             </div>
         `;
     });
