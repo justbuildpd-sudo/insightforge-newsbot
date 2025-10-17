@@ -113,6 +113,37 @@ def get_emdong_detail(emdong_code):
     
     return jsonify({})
 
+@app.route('/api/emdong/<emdong_code>/enhanced')
+def get_emdong_enhanced(emdong_code):
+    """읍면동 향상된 상세 정보"""
+    year = request.args.get('year', '2023')
+    
+    # 기본 정보
+    base_data = {}
+    regions_data = load_json_file('sgis_national_regions.json')
+    if regions_data and 'regions' in regions_data:
+        for sido_code, sido_data in regions_data['regions'].items():
+            for sigungu in sido_data.get('sigungu_list', []):
+                for emdong in sigungu.get('emdong_list', []):
+                    if emdong.get('emdong_code') == emdong_code:
+                        base_data = emdong
+                        break
+    
+    # 멀티 year 통계 데이터
+    multiyear_data = load_json_file('sgis_enhanced_multiyear_stats.json') or {}
+    year_stats = {}
+    if emdong_code in multiyear_data:
+        emdong_data = multiyear_data[emdong_code]
+        if 'years' in emdong_data and year in emdong_data['years']:
+            year_stats = emdong_data['years'][year]
+    
+    result = {
+        **base_data,
+        **year_stats
+    }
+    
+    return jsonify(result)
+
 @app.route('/api/regions')
 def get_regions():
     """전체 지역 목록"""
