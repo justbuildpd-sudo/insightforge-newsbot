@@ -7,8 +7,20 @@ from pathlib import Path
 app = Flask(__name__)
 CORS(app)
 
-# 데이터 디렉토리
-DATA_DIR = Path(__file__).parent.parent / "insightforge-web" / "data"
+# 데이터 디렉토리 - Vercel 환경 고려
+import sys
+# Vercel에서는 현재 작업 디렉토리가 프로젝트 루트
+DATA_DIR = Path.cwd() / "insightforge-web" / "data"
+if not DATA_DIR.exists():
+    # 대안 경로들 시도
+    DATA_DIR = Path(__file__).parent.parent / "insightforge-web" / "data"
+    if not DATA_DIR.exists():
+        DATA_DIR = Path("/var/task/insightforge-web/data")
+
+print(f"📁 데이터 디렉토리: {DATA_DIR}", file=sys.stderr)
+print(f"📁 존재 여부: {DATA_DIR.exists()}", file=sys.stderr)
+if DATA_DIR.exists():
+    print(f"📁 파일 목록: {list(DATA_DIR.glob('*.json'))[:5]}", file=sys.stderr)
 
 # 데이터 캐시
 data_cache = {}
