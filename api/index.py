@@ -79,6 +79,26 @@ def get_sigungu_detail(sigungu_code):
                     return jsonify(sigungu)
     return jsonify({})
 
+@app.route('/api/national/sigungu/<sigungu_code>/detail')
+def get_sigungu_detail_with_stats(sigungu_code):
+    """시군구 상세 정보 (통계 포함)"""
+    # 기본 정보
+    basic_data = get_sigungu_detail(sigungu_code).get_json()
+    
+    # 통계 데이터 추가 (있다면)
+    stats_data = load_json_file('sgis_comprehensive_stats.json') or {}
+    commercial_data = load_json_file('sgis_commercial_stats.json') or {}
+    tech_data = load_json_file('sgis_tech_stats.json') or {}
+    
+    result = {
+        **basic_data,
+        'stats': stats_data.get(sigungu_code, {}),
+        'commercial': commercial_data.get(sigungu_code, {}),
+        'tech': tech_data.get(sigungu_code, {})
+    }
+    
+    return jsonify(result)
+
 @app.route('/api/national/emdong/<emdong_code>')
 def get_emdong_detail(emdong_code):
     """읍면동 상세 정보"""
