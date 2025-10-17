@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Large data files
+sales/
+traffic/
+data/gis/
+census/
+*.tar.gz
+*.backup
+
+# Data files (keep only essential web service data)
+*.csv
+*.xlsx
+*.xls
+*.txt
+SAVEPOINTS/
+news_data/
+election/
+election_districts_by_sido/
+gis/
+InsightForge/
+
+# Temporary files
+*.tmp
+.cache/
+*.pid
+multiyear_progress.json
+collector*.pid
+
