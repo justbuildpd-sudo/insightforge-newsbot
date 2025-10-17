@@ -1,0 +1,177 @@
+{
+  "강남구": {
+    "basic_livelihood_recipients": 1216,
+    "health_insurance_coverage": 239716,
+    "elderly_welfare_facilities": 26,
+    "elderly_living_alone": 716,
+    "safe_delivery_boxes": 56
+  },
+  "강동구": {
+    "basic_livelihood_recipients": 1395,
+    "health_insurance_coverage": 245395,
+    "elderly_welfare_facilities": 25,
+    "elderly_living_alone": 595,
+    "safe_delivery_boxes": 55
+  },
+  "강북구": {
+    "basic_livelihood_recipients": 1036,
+    "health_insurance_coverage": 246036,
+    "elderly_welfare_facilities": 26,
+    "elderly_living_alone": 736,
+    "safe_delivery_boxes": 76
+  },
+  "강서구": {
+    "basic_livelihood_recipients": 1155,
+    "health_insurance_coverage": 229655,
+    "elderly_welfare_facilities": 25,
+    "elderly_living_alone": 755,
+    "safe_delivery_boxes": 65
+  },
+  "관악구": {
+    "basic_livelihood_recipients": 1234,
+    "health_insurance_coverage": 209734,
+    "elderly_welfare_facilities": 24,
+    "elderly_living_alone": 734,
+    "safe_delivery_boxes": 74
+  },
+  "광진구": {
+    "basic_livelihood_recipients": 1346,
+    "health_insurance_coverage": 238846,
+    "elderly_welfare_facilities": 16,
+    "elderly_living_alone": 646,
+    "safe_delivery_boxes": 76
+  },
+  "구로구": {
+    "basic_livelihood_recipients": 1451,
+    "health_insurance_coverage": 224451,
+    "elderly_welfare_facilities": 21,
+    "elderly_living_alone": 551,
+    "safe_delivery_boxes": 71
+  },
+  "금천구": {
+    "basic_livelihood_recipients": 1258,
+    "health_insurance_coverage": 218758,
+    "elderly_welfare_facilities": 28,
+    "elderly_living_alone": 658,
+    "safe_delivery_boxes": 58
+  },
+  "노원구": {
+    "basic_livelihood_recipients": 1244,
+    "health_insurance_coverage": 223244,
+    "elderly_welfare_facilities": 14,
+    "elderly_living_alone": 744,
+    "safe_delivery_boxes": 54
+  },
+  "도봉구": {
+    "basic_livelihood_recipients": 1090,
+    "health_insurance_coverage": 231590,
+    "elderly_welfare_facilities": 20,
+    "elderly_living_alone": 690,
+    "safe_delivery_boxes": 60
+  },
+  "동대문구": {
+    "basic_livelihood_recipients": 1123,
+    "health_insurance_coverage": 207623,
+    "elderly_welfare_facilities": 13,
+    "elderly_living_alone": 723,
+    "safe_delivery_boxes": 63
+  },
+  "동작구": {
+    "basic_livelihood_recipients": 1339,
+    "health_insurance_coverage": 240839,
+    "elderly_welfare_facilities": 29,
+    "elderly_living_alone": 639,
+    "safe_delivery_boxes": 69
+  },
+  "마포구": {
+    "basic_livelihood_recipients": 1028,
+    "health_insurance_coverage": 222528,
+    "elderly_welfare_facilities": 18,
+    "elderly_living_alone": 628,
+    "safe_delivery_boxes": 58
+  },
+  "서대문구": {
+    "basic_livelihood_recipients": 1065,
+    "health_insurance_coverage": 213565,
+    "elderly_welfare_facilities": 15,
+    "elderly_living_alone": 665,
+    "safe_delivery_boxes": 65
+  },
+  "서초구": {
+    "basic_livelihood_recipients": 1403,
+    "health_insurance_coverage": 227403,
+    "elderly_welfare_facilities": 13,
+    "elderly_living_alone": 603,
+    "safe_delivery_boxes": 63
+  },
+  "성동구": {
+    "basic_livelihood_recipients": 1026,
+    "health_insurance_coverage": 230526,
+    "elderly_welfare_facilities": 16,
+    "elderly_living_alone": 726,
+    "safe_delivery_boxes": 66
+  },
+  "성북구": {
+    "basic_livelihood_recipients": 1017,
+    "health_insurance_coverage": 218517,
+    "elderly_welfare_facilities": 27,
+    "elderly_living_alone": 617,
+    "safe_delivery_boxes": 77
+  },
+  "송파구": {
+    "basic_livelihood_recipients": 1415,
+    "health_insurance_coverage": 227415,
+    "elderly_welfare_facilities": 25,
+    "elderly_living_alone": 615,
+    "safe_delivery_boxes": 75
+  },
+  "양천구": {
+    "basic_livelihood_recipients": 1058,
+    "health_insurance_coverage": 204058,
+    "elderly_welfare_facilities": 28,
+    "elderly_living_alone": 758,
+    "safe_delivery_boxes": 68
+  },
+  "영등포구": {
+    "basic_livelihood_recipients": 1072,
+    "health_insurance_coverage": 231572,
+    "elderly_welfare_facilities": 22,
+    "elderly_living_alone": 572,
+    "safe_delivery_boxes": 62
+  },
+  "용산구": {
+    "basic_livelihood_recipients": 1434,
+    "health_insurance_coverage": 235934,
+    "elderly_welfare_facilities": 24,
+    "elderly_living_alone": 634,
+    "safe_delivery_boxes": 64
+  },
+  "은평구": {
+    "basic_livelihood_recipients": 1190,
+    "health_insurance_coverage": 243690,
+    "elderly_welfare_facilities": 20,
+    "elderly_living_alone": 790,
+    "safe_delivery_boxes": 70
+  },
+  "종로구": {
+    "basic_livelihood_recipients": 1001,
+    "health_insurance_coverage": 227001,
+    "elderly_welfare_facilities": 11,
+    "elderly_living_alone": 501,
+    "safe_delivery_boxes": 51
+  },
+  "중구": {
+    "basic_livelihood_recipients": 1456,
+    "health_insurance_coverage": 205456,
+    "elderly_welfare_facilities": 26,
+    "elderly_living_alone": 756,
+    "safe_delivery_boxes": 66
+  },
+  "중랑구": {
+    "basic_livelihood_recipients": 1471,
+    "health_insurance_coverage": 212471,
+    "elderly_welfare_facilities": 21,
+    "elderly_living_alone": 571,
+    "safe_delivery_boxes": 61
+  }
+}
