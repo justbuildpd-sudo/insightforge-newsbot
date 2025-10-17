@@ -253,17 +253,13 @@ async function loadEmdongList(sigunguCode) {
         emdongList.forEach(emdong => {
             const emdongCode = emdong.emdong_code;
             const emdongName = emdong.emdong_name;
-            const popText = emdong.population ? `${emdong.population.toLocaleString()}` : '-';
             
             html += `
                 <div class="px-2 py-1 hover:bg-purple-50 rounded cursor-pointer border border-gray-100 text-xs transition-colors"
                      onclick='selectEmdong("${emdongCode}")'>
                     <div class="flex justify-between items-center">
                         <span class="text-gray-700">${emdongName}</span>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="text-gray-500">${popText}</span>
-                            <span class="text-purple-600">${emdong.company_cnt || 0}개</span>
-                        </div>
+                        <span class="text-gray-500 text-xs">${emdongCode}</span>
                     </div>
                 </div>
             `;
@@ -1176,8 +1172,8 @@ function renderEmdongDetail(emdong) {
         <div class="max-w-5xl">
             <!-- 헤더 -->
             <div class="mb-6">
-                <h2 class="text-3xl font-bold text-gray-900">${emdong.full_address || '읍면동'}</h2>
-                <p class="text-gray-600 mt-1">행정동 코드: ${emdong.code} | 최신 데이터: ${selectedYear}년</p>
+                <h2 class="text-3xl font-bold text-gray-900">${emdong.full_address || (emdong.sido_name + ' ' + emdong.sigungu_name + ' ' + emdong.emdong_name)}</h2>
+                <p class="text-gray-600 mt-1">행정동 코드: ${emdong.emdong_code || emdong.code} | 최신 데이터: ${selectedYear}년</p>
             </div>
             
             <!-- 시계열 차트 영역 -->
