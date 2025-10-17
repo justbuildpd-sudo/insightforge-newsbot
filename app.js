@@ -64,7 +64,10 @@ async function loadNationalData() {
         const data = await response.json();
         console.log('📦 받은 데이터:', data);
         
-        allSido = data.sido_list || [];
+        // API가 직접 배열을 반환함
+        allSido = Array.isArray(data) ? data : (data.sido_list || []);
+        
+        console.log('📦 시도 목록 길이:', allSido.length);
         
         if (allSido.length === 0) {
             throw new Error('시도 목록이 비어있습니다');
