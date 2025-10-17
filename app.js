@@ -172,8 +172,13 @@ async function loadSigunguList(sidoCode) {
         
         let html = '<div class="space-y-1">';
         
-        data.sigungu_list.forEach(sigungu => {
-            const isExpanded = expandedSigungus.has(sigungu.sigungu_code);
+        const sigunguList = data.sigungu_list || [];
+        
+        sigunguList.forEach(sigungu => {
+            const sigunguCode = sigungu.sigungu_code;
+            const sigunguName = sigungu.sigungu_name;
+            const emdongCount = sigungu.emdong_list ? sigungu.emdong_list.length : 0;
+            const isExpanded = expandedSigungus.has(sigunguCode);
             const popText = sigungu.total_population ? `${sigungu.total_population.toLocaleString()}명` : '-';
             
             html += `
@@ -182,17 +187,17 @@ async function loadSigunguList(sidoCode) {
                         <div class="flex items-center gap-2">
                             <svg class="w-2.5 h-2.5 transform transition-transform ${isExpanded ? 'rotate-90' : ''} cursor-pointer hover:text-blue-600" 
                                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                 onclick='toggleSigungu("${sigungu.sigungu_code}")'>
+                                 onclick='toggleSigungu("${sigunguCode}")'>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
-                            <span class="cursor-pointer hover:text-blue-600" onclick='selectSigungu("${sigungu.sigungu_code}")'>${sigungu.sigungu_name}</span>
+                            <span class="cursor-pointer hover:text-blue-600" onclick='selectSigungu("${sigunguCode}")'>${sigunguName}</span>
                         </div>
                         <div class="flex items-center gap-2 text-xs">
-                            <span class="text-gray-500">${sigungu.emdong_count}개</span>
+                            <span class="text-gray-500">${emdongCount}개</span>
                             <span class="text-green-600">${popText}</span>
                         </div>
                     </div>
-                    ${isExpanded ? `<div id="sigungu-${sigungu.sigungu_code}" class="ml-3 mt-1"></div>` : ''}
+                    ${isExpanded ? `<div id="sigungu-${sigunguCode}" class="ml-3 mt-1"></div>` : ''}
                 </div>
             `;
         });
