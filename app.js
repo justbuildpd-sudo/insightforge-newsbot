@@ -214,13 +214,13 @@ async function toggleSigungu(sigunguCode) {
     if (expandedSigungus.has(sigunguCode)) {
         expandedSigungus.delete(sigunguCode);
         // 부모 시도 다시 로드
-        const sido = allSido.find(s => expandedSidos.has(s.code));
-        if (sido) await loadSigunguList(sido.code);
+        const sido = allSido.find(s => expandedSidos.has(s.sido_cd || s.code));
+        if (sido) await loadSigunguList(sido.sido_cd || sido.code);
     } else {
         expandedSigungus.add(sigunguCode);
         // 부모 시도 다시 로드
-        const sido = allSido.find(s => expandedSidos.has(s.code));
-        if (sido) await loadSigunguList(sido.code);
+        const sido = allSido.find(s => expandedSidos.has(s.sido_cd || s.code));
+        if (sido) await loadSigunguList(sido.sido_cd || sido.code);
         await loadEmdongList(sigunguCode);
     }
 }
@@ -237,22 +237,32 @@ async function loadEmdongList(sigunguCode) {
         const response = await fetch(`${API_BASE}/api/national/sigungu/${sigunguCode}`);
         const data = await response.json();
         
+        console.log('📦 시군구 데이터:', data);
+        
         const container = document.getElementById(`sigungu-${sigunguCode}`);
-        if (!container) return;
+        if (!container) {
+            console.error('❌ 컨테이너를 찾을 수 없습니다:', `sigungu-${sigunguCode}`);
+            return;
+        }
         
         let html = '<div class="space-y-0.5">';
         
-        data.emdong_list.forEach(emdong => {
+        const emdongList = data.emdong_list || [];
+        console.log(`📋 읍면동 목록 개수: ${emdongList.length}`);
+        
+        emdongList.forEach(emdong => {
+            const emdongCode = emdong.emdong_code;
+            const emdongName = emdong.emdong_name;
             const popText = emdong.population ? `${emdong.population.toLocaleString()}` : '-';
             
             html += `
                 <div class="px-2 py-1 hover:bg-purple-50 rounded cursor-pointer border border-gray-100 text-xs transition-colors"
-                     onclick='selectEmdong("${emdong.code}")'>
+                     onclick='selectEmdong("${emdongCode}")'>
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-700">${emdong.name}</span>
+                        <span class="text-gray-700">${emdongName}</span>
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-gray-500">${popText}</span>
-                            <span class="text-purple-600">${emdong.company_cnt}개</span>
+                            <span class="text-purple-600">${emdong.company_cnt || 0}개</span>
                         </div>
                     </div>
                 </div>
