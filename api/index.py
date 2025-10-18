@@ -57,6 +57,39 @@ def load_json_file(filename):
         print(f"Error loading {filename}: {e}")
         return None
 
+@app.route('/api/population/yearly')
+def get_population_yearly():
+    """연도별 인구 데이터 조회 (2008-2025)"""
+    data = load_json_file('population_yearly_data.json')
+    if data:
+        return jsonify(data)
+    return jsonify({})
+
+@app.route('/api/population/yearly/<year>')
+def get_population_by_year(year):
+    """특정 연도 인구 데이터 조회"""
+    data = load_json_file('population_yearly_data.json')
+    if data and year in data:
+        return jsonify(data[year])
+    return jsonify({})
+
+@app.route('/api/population/region/<region_name>')
+def get_population_by_region(region_name):
+    """특정 지역의 연도별 인구 변화"""
+    data = load_json_file('population_yearly_data.json')
+    if not data:
+        return jsonify({})
+    
+    result = {}
+    for year, year_data in data.items():
+        if 'population' in year_data and region_name in year_data['population']:
+            result[year] = {
+                'population': year_data['population'][region_name],
+                'population_change': year_data.get('population_change', {}).get(region_name, {})
+            }
+    
+    return jsonify(result)
+
 @app.route('/api/national/sido')
 def get_sido_list():
     """시도 목록 조회"""
