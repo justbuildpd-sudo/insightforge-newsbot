@@ -227,8 +227,21 @@ async function toggleSigungu(sigunguCode) {
             console.log('📦 시군구 상세 데이터 (toggle):', data);
             renderSigunguDetail(data);
             
+            // 정치인 정보 가져오기
+            let politicians = [];
+            try {
+                const emdongList = data.emdong_list || [];
+                for (const emdong of emdongList) {
+                    try {
+                        const polResponse = await fetch(`${API_BASE}/api/politicians/emdong/${emdong.emdong_code}`);
+                        const polData = await polResponse.json();
+                        politicians.push(...(polData || []));
+                    } catch (e) {}
+                }
+            } catch (e) {}
+            
             // 시계열 그래프도 로드
-            loadSigunguTimeseries(sigunguCode);
+            loadSigunguTimeseries(sigunguCode, politicians);
         } catch (error) {
             console.error('❌ 시군구 상세 정보 로드 실패:', error);
         }
@@ -252,8 +265,26 @@ async function selectSigungu(sigunguCode) {
         console.log('📦 시군구 상세 데이터:', data);
         renderSigunguDetail(data);
         
-        // 시계열 그래프 렌더링
-        loadSigunguTimeseries(sigunguCode);
+        // 정치인 정보 가져오기
+        let politicians = [];
+        try {
+            // 해당 시군구의 모든 읍면동 정치인 수집
+            const emdongList = data.emdong_list || [];
+            for (const emdong of emdongList) {
+                try {
+                    const polResponse = await fetch(`${API_BASE}/api/politicians/emdong/${emdong.emdong_code}`);
+                    const polData = await polResponse.json();
+                    politicians.push(...(polData || []));
+                } catch (e) {
+                    // 정치인 없으면 스킵
+                }
+            }
+        } catch (e) {
+            console.log('정치인 정보 수집 실패');
+        }
+        
+        // 시계열 그래프 렌더링 (정치인 데이터 전달)
+        loadSigunguTimeseries(sigunguCode, politicians);
         
     } catch (error) {
         console.error('❌ 시군구 상세 정보 로드 실패:', error);
@@ -336,8 +367,8 @@ async function selectEmdong(emdongCode) {
         
         renderEmdongDetail(data);
         
-        // 시계열 그래프 렌더링
-        loadEmdongTimeseries(emdongCode);
+        // 시계열 그래프 렌더링 (정치인 데이터 전달)
+        loadEmdongTimeseries(emdongCode, data.politicians);
         
         // 시계열 데이터도 가져오기 (있는 경우)
         loadTimeseriesData(emdongCode);
@@ -1973,7 +2004,7 @@ async function performGlobalSearch(query) {
 // 시계열 그래프 (D3.js)
 // ============================================
 
-async function loadAndRenderTimeseries(emdongCode) {
+async function loadAndRenderTimeseries(emdongCode, politicians) {
     try {
         const response = await fetch(`${API_BASE}/api/emdong/${emdongCode}/timeseries`);
         const data = await response.json();
@@ -1983,14 +2014,14 @@ async function loadAndRenderTimeseries(emdongCode) {
             return;
         }
         
-        renderTimeseriesChart(data.timeseries);
+        renderTimeseriesChart(data.timeseries, politicians);
         
     } catch (error) {
         console.error('시계열 데이터 로드 실패:', error);
     }
 }
 
-function renderTimeseriesChart(timeseriesData) {
+function renderTimeseriesChart(timeseriesData, politicians) {
     const container = document.getElementById('timeseriesChart');
     if (!container) return;
     
@@ -2001,6 +2032,14 @@ function renderTimeseriesChart(timeseriesData) {
     const margin = {top: 30, right: 100, bottom: 50, left: 70};
     const width = container.clientWidth - margin.left - margin.right;
     const height = 250 - margin.top - margin.bottom;
+    
+    // 정치인 임기 정보 (제8회 지방선거: 2022-07-01 ~ 2026-06-30)
+    const politicianTerms = politicians && politicians.length > 0 ? [{
+        startDate: new Date('2022-07-01'),
+        endDate: new Date('2026-06-30'),
+        politicians: politicians,
+        label: '제8회 지방선거 임기'
+    }] : [];
     
     // SVG 생성
     const svg = d3.select('#timeseriesChart')
@@ -2050,6 +2089,51 @@ function renderTimeseriesChart(timeseriesData) {
             .tickFormat(d => d.toLocaleString()))
         .selectAll('text')
         .style('font-size', '11px');
+    
+    // 정치인 임기 배경 표시
+    politicianTerms.forEach(term => {
+        const termStart = term.startDate;
+        const termEnd = term.endDate;
+        
+        // 그래프 범위 내에 있는지 확인
+        const xDomain = x.domain();
+        if (termEnd >= xDomain[0] && termStart <= xDomain[1]) {
+            const startX = Math.max(0, x(termStart));
+            const endX = Math.min(width, x(termEnd));
+            
+            // 배경 사각형
+            svg.append('rect')
+                .attr('x', startX)
+                .attr('y', 0)
+                .attr('width', endX - startX)
+                .attr('height', height)
+                .attr('fill', '#fef3c7')  // 노란색 배경
+                .attr('opacity', 0.3)
+                .attr('stroke', '#f59e0b')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+            
+            // 정치인 정보 텍스트
+            const politicians = term.politicians || [];
+            const uniqueParties = [...new Set(politicians.map(p => p.party))];
+            const partyText = uniqueParties.slice(0, 2).join(', ') + (uniqueParties.length > 2 ? ' 외' : '');
+            
+            svg.append('text')
+                .attr('x', startX + 5)
+                .attr('y', 15)
+                .style('font-size', '10px')
+                .style('font-weight', 'bold')
+                .attr('fill', '#92400e')
+                .text(`${term.label} (${politicians.length}명)`);
+            
+            svg.append('text')
+                .attr('x', startX + 5)
+                .attr('y', 28)
+                .style('font-size', '9px')
+                .attr('fill', '#92400e')
+                .text(partyText);
+        }
+    });
     
     // 라인 생성 함수
     const line = d3.line()
@@ -2191,8 +2275,8 @@ function renderTimeseriesChart(timeseriesData) {
         .text('인구 (명)');
 }
 
-// 시군구용 시계열 로드
-async function loadSigunguTimeseries(sigunguCode) {
+// 시군구용 시계열 로드 (정치인 데이터 포함 가능)
+async function loadSigunguTimeseries(sigunguCode, politicians) {
     try {
         const response = await fetch(`${API_BASE}/api/sigungu/${sigunguCode}/timeseries`);
         const data = await response.json();
@@ -2202,7 +2286,7 @@ async function loadSigunguTimeseries(sigunguCode) {
             return;
         }
         
-        renderTimeseriesChart(data.timeseries);
+        renderTimeseriesChart(data.timeseries, politicians);
         
     } catch (error) {
         console.error('시군구 시계열 데이터 로드 실패:', error);
