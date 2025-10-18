@@ -227,21 +227,8 @@ async function toggleSigungu(sigunguCode) {
             console.log('📦 시군구 상세 데이터 (toggle):', data);
             renderSigunguDetail(data);
             
-            // 정치인 정보 가져오기
-            let politicians = [];
-            try {
-                const emdongList = data.emdong_list || [];
-                for (const emdong of emdongList) {
-                    try {
-                        const polResponse = await fetch(`${API_BASE}/api/politicians/emdong/${emdong.emdong_code}`);
-                        const polData = await polResponse.json();
-                        politicians.push(...(polData || []));
-                    } catch (e) {}
-                }
-            } catch (e) {}
-            
-            // 시계열 그래프도 로드
-            loadSigunguTimeseries(sigunguCode, politicians);
+            // 시계열 그래프도 로드 (정치인 정보는 나중에)
+            loadSigunguTimeseries(sigunguCode, []);
         } catch (error) {
             console.error('❌ 시군구 상세 정보 로드 실패:', error);
         }
@@ -265,26 +252,8 @@ async function selectSigungu(sigunguCode) {
         console.log('📦 시군구 상세 데이터:', data);
         renderSigunguDetail(data);
         
-        // 정치인 정보 가져오기
-        let politicians = [];
-        try {
-            // 해당 시군구의 모든 읍면동 정치인 수집
-            const emdongList = data.emdong_list || [];
-            for (const emdong of emdongList) {
-                try {
-                    const polResponse = await fetch(`${API_BASE}/api/politicians/emdong/${emdong.emdong_code}`);
-                    const polData = await polResponse.json();
-                    politicians.push(...(polData || []));
-                } catch (e) {
-                    // 정치인 없으면 스킵
-                }
-            }
-        } catch (e) {
-            console.log('정치인 정보 수집 실패');
-        }
-        
-        // 시계열 그래프 렌더링 (정치인 데이터 전달)
-        loadSigunguTimeseries(sigunguCode, politicians);
+        // 시계열 그래프 먼저 렌더링 (정치인 정보는 나중에)
+        loadSigunguTimeseries(sigunguCode, []);
         
     } catch (error) {
         console.error('❌ 시군구 상세 정보 로드 실패:', error);
