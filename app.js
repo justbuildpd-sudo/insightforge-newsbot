@@ -2722,15 +2722,38 @@ function createPeriodStatsContainer() {
 // 시군구용 시계열 로드 (정치인 데이터 포함 가능)
 async function loadSigunguTimeseries(sigunguCode, politicians) {
     try {
-        const response = await fetch(`${API_BASE}/api/sigungu/${sigunguCode}/timeseries`);
-        const data = await response.json();
+        // 2008-2025년 인구 데이터 로드
+        const populationResponse = await fetch(`${API_BASE}/api/population/yearly`);
+        const allPopulationData = await populationResponse.json();
         
-        if (!data.timeseries || data.timeseries.length === 0) {
-            console.log('시군구 시계열 데이터 없음');
-            return;
+        // 시군구 이름으로 필터링 (예: "서울특별시 강남구")
+        const timeseriesData = [];
+        
+        for (let year = 2008; year <= 2025; year++) {
+            const yearStr = String(year);
+            if (allPopulationData[yearStr] && allPopulationData[yearStr].population) {
+                // 해당 시군구 찾기
+                for (const [regionName, regionData] of Object.entries(allPopulationData[yearStr].population)) {
+                    // sigunguCode에서 구 이름 추출하여 매칭
+                    if (regionName.includes(sigunguCode) || regionName.endsWith('구')) {
+                        timeseriesData.push({
+                            date: `${year}-06`,  // 6월로 통일
+                            population: regionData.total_population || 0,
+                            male: regionData.male || 0,
+                            female: regionData.female || 0
+                        });
+                        break;
+                    }
+                }
+            }
         }
         
-        renderTimeseriesChart(data.timeseries, politicians, data.yearly_business);
+        if (timeseriesData.length > 0) {
+            console.log(`📊 인구 시계열 데이터: ${timeseriesData.length}개년도`);
+            renderTimeseriesChart(timeseriesData, politicians, []);
+        } else {
+            console.log('시군구 시계열 데이터 없음');
+        }
         
     } catch (error) {
         console.error('시군구 시계열 데이터 로드 실패:', error);
