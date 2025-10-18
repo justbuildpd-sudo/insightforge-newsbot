@@ -2394,6 +2394,7 @@ window.switchMetric = switchMetric;
 function drawBusinessChart() {
     const {width, height, margin} = window.currentChartSize;
     const yearlyBusiness = window.currentYearlyBusiness || [];
+    const politicianTerms = window.currentPoliticianTerms || [];
     
     if (yearlyBusiness.length === 0) {
         d3.select('#chartContainer').html('<div class="text-center py-8 text-gray-500">사업체 데이터 없음</div>');
@@ -2420,12 +2421,51 @@ function drawBusinessChart() {
         .domain([0, d3.max(yearlyBusiness, d => d.company_cnt) * 1.1])
         .range([height, 0]);
     
+    // 정치인 임기 배경 (연도 기반)
+    politicianTerms.forEach((term, idx) => {
+        const termStartYear = term.startDate.getFullYear();
+        const termEndYear = term.endDate.getFullYear();
+        
+        // 해당하는 연도들 찾기
+        const years = yearlyBusiness.map(d => d.year).filter(y => y >= termStartYear && y <= termEndYear);
+        
+        if (years.length > 0) {
+            const startX = x(years[0]);
+            const endX = x(years[years.length - 1]) + x.bandwidth();
+            const barHeight = height / Math.max(politicianTerms.length, 1);
+            const yPos = idx * barHeight;
+            
+            svg.append('rect')
+                .attr('x', startX)
+                .attr('y', yPos)
+                .attr('width', endX - startX)
+                .attr('height', barHeight)
+                .attr('fill', term.color)
+                .attr('opacity', 0.15)
+                .attr('stroke', term.color)
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+            
+            const uniqueParties = [...new Set(term.politicians.map(p => p.party))];
+            const partyText = uniqueParties.slice(0, 2).join(', ') + (uniqueParties.length > 2 ? ' 외' : '');
+            
+            svg.append('text')
+                .attr('x', startX + 5)
+                .attr('y', yPos + 15)
+                .style('font-size', '9px')
+                .style('font-weight', 'bold')
+                .attr('fill', term.color)
+                .text(`${term.label}: ${partyText}`);
+        }
+    });
+    
     // X축 그리기
     svg.append('g')
         .attr('transform', `translate(0,${height})`)
         .call(d3.axisBottom(x))
         .selectAll('text')
-        .style('font-size', '11px');
+        .style('font-size', '12px')
+        .style('font-weight', 'bold');
     
     // Y축 그리기
     svg.append('g')
@@ -2482,6 +2522,7 @@ function drawBusinessChart() {
 function drawHousingChart() {
     const {width, height, margin} = window.currentChartSize;
     const yearlyBusiness = window.currentYearlyBusiness || [];
+    const politicianTerms = window.currentPoliticianTerms || [];
     
     if (yearlyBusiness.length === 0) {
         d3.select('#chartContainer').html('<div class="text-center py-8 text-gray-500">주택 데이터 없음</div>');
@@ -2508,12 +2549,50 @@ function drawHousingChart() {
         .domain([0, d3.max(yearlyBusiness, d => d.house_cnt) * 1.1])
         .range([height, 0]);
     
+    // 정치인 임기 배경 (연도 기반)
+    politicianTerms.forEach((term, idx) => {
+        const termStartYear = term.startDate.getFullYear();
+        const termEndYear = term.endDate.getFullYear();
+        
+        const years = yearlyBusiness.map(d => d.year).filter(y => y >= termStartYear && y <= termEndYear);
+        
+        if (years.length > 0) {
+            const startX = x(years[0]);
+            const endX = x(years[years.length - 1]) + x.bandwidth();
+            const barHeight = height / Math.max(politicianTerms.length, 1);
+            const yPos = idx * barHeight;
+            
+            svg.append('rect')
+                .attr('x', startX)
+                .attr('y', yPos)
+                .attr('width', endX - startX)
+                .attr('height', barHeight)
+                .attr('fill', term.color)
+                .attr('opacity', 0.15)
+                .attr('stroke', term.color)
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+            
+            const uniqueParties = [...new Set(term.politicians.map(p => p.party))];
+            const partyText = uniqueParties.slice(0, 2).join(', ') + (uniqueParties.length > 2 ? ' 외' : '');
+            
+            svg.append('text')
+                .attr('x', startX + 5)
+                .attr('y', yPos + 15)
+                .style('font-size', '9px')
+                .style('font-weight', 'bold')
+                .attr('fill', term.color)
+                .text(`${term.label}: ${partyText}`);
+        }
+    });
+    
     // X축 그리기
     svg.append('g')
         .attr('transform', `translate(0,${height})`)
         .call(d3.axisBottom(x))
         .selectAll('text')
-        .style('font-size', '11px');
+        .style('font-size', '12px')
+        .style('font-weight', 'bold');
     
     // Y축 그리기
     svg.append('g')
