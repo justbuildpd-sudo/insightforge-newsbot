@@ -2027,7 +2027,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
     const width = container.clientWidth - margin.left - margin.right - 40;
     const height = 220 - margin.top - margin.bottom;
     
-    // 정치인 임기 정보 구조화
+    // 정치인 임기 정보 구조화 (제7회 + 제8회)
     const politicianTerms = [];
     
     if (politicians && politicians.length > 0) {
@@ -2039,7 +2039,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
             byPosition[pos].push(p);
         });
         
-        // 각 직위별로 임기 추가
+        // 각 직위별 색상
         const positionColors = {
             '서울시장': '#ef4444',
             '구청장': '#f97316',
@@ -2048,6 +2048,19 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
             '구의원': '#8b5cf6'
         };
         
+        // 제7회 임기 (2018-07-01 ~ 2022-06-30)
+        Object.entries(byPosition).forEach(([position, pols]) => {
+            politicianTerms.push({
+                startDate: new Date('2018-07-01'),
+                endDate: new Date('2022-06-30'),
+                politicians: pols,
+                position: position,
+                color: positionColors[position] || '#6b7280',
+                label: `${position} (제7회)`
+            });
+        });
+        
+        // 제8회 임기 (2022-07-01 ~ 2026-06-30)
         Object.entries(byPosition).forEach(([position, pols]) => {
             politicianTerms.push({
                 startDate: new Date('2022-07-01'),
@@ -2055,7 +2068,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
                 politicians: pols,
                 position: position,
                 color: positionColors[position] || '#6b7280',
-                label: `${position} (${pols.length}명)`
+                label: `${position} (제8회)`
             });
         });
     }
