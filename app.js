@@ -2027,7 +2027,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
     const width = container.clientWidth - margin.left - margin.right - 40;
     const height = 220 - margin.top - margin.bottom;
     
-    // 정치인 임기 정보 구조화 (제7회 + 제8회)
+    // 정치인 임기 정보 구조화 (지방선거 5-8회 + 국회의원 16-22대)
     const politicianTerms = [];
     
     if (politicians && politicians.length > 0) {
@@ -2048,29 +2048,54 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
             '구의원': '#8b5cf6'
         };
         
-        // 제7회 임기 (2018-07-01 ~ 2022-06-30)
-        Object.entries(byPosition).forEach(([position, pols]) => {
-            politicianTerms.push({
-                startDate: new Date('2018-07-01'),
-                endDate: new Date('2022-06-30'),
-                politicians: pols,
-                position: position,
-                color: positionColors[position] || '#6b7280',
-                label: `${position} (제7회)`
+        // 지방선거 임기 (시의원, 구의원, 시장, 구청장)
+        const localElectionTerms = [
+            {round: 5, start: '2010-07-01', end: '2014-06-30'},
+            {round: 6, start: '2014-07-01', end: '2018-06-30'},
+            {round: 7, start: '2018-07-01', end: '2022-06-30'},
+            {round: 8, start: '2022-07-01', end: '2026-06-30'}
+        ];
+        
+        const localPositions = ['시의원', '구의원', '서울시장', '구청장'];
+        
+        localElectionTerms.forEach(({round, start, end}) => {
+            Object.entries(byPosition).forEach(([position, pols]) => {
+                if (localPositions.includes(position)) {
+                    politicianTerms.push({
+                        startDate: new Date(start),
+                        endDate: new Date(end),
+                        politicians: pols,
+                        position: position,
+                        color: positionColors[position] || '#6b7280',
+                        label: `${position} (제${round}회)`
+                    });
+                }
             });
         });
         
-        // 제8회 임기 (2022-07-01 ~ 2026-06-30)
-        Object.entries(byPosition).forEach(([position, pols]) => {
-            politicianTerms.push({
-                startDate: new Date('2022-07-01'),
-                endDate: new Date('2026-06-30'),
-                politicians: pols,
-                position: position,
-                color: positionColors[position] || '#6b7280',
-                label: `${position} (제8회)`
+        // 국회의원 임기
+        const nationalElectionTerms = [
+            {term: 16, start: '2000-05-30', end: '2004-05-29'},
+            {term: 17, start: '2004-05-30', end: '2008-05-29'},
+            {term: 18, start: '2008-05-30', end: '2012-05-29'},
+            {term: 19, start: '2012-05-30', end: '2016-05-29'},
+            {term: 20, start: '2016-05-30', end: '2020-05-29'},
+            {term: 21, start: '2020-05-30', end: '2024-05-29'},
+            {term: 22, start: '2024-05-30', end: '2028-05-29'}
+        ];
+        
+        if (byPosition['국회의원']) {
+            nationalElectionTerms.forEach(({term, start, end}) => {
+                politicianTerms.push({
+                    startDate: new Date(start),
+                    endDate: new Date(end),
+                    politicians: byPosition['국회의원'],
+                    position: '국회의원',
+                    color: positionColors['국회의원'],
+                    label: `국회의원 (제${term}대)`
+                });
             });
-        });
+        }
     }
     
     // 현재 데이터 저장 (지표 전환용)
