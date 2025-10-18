@@ -1940,3 +1940,16 @@ async function performGlobalSearch(query) {
         console.error('검색 실패:', error);
     }
 }
+
+// ============================================
+// 전역 함수 등록 (HTML onclick에서 사용)
+// ============================================
+
+window.toggleSido = toggleSido;
+window.toggleSigungu = toggleSigungu;
+window.selectSigungu = selectSigungu;
+window.selectEmdong = selectEmdong;
+window.toggleSeoul = toggleSeoul;
+window.toggleGu = toggleGu;
+window.selectRegion = selectRegion;
+window.toggleLDAPanel = toggleLDAPanel;
