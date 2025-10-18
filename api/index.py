@@ -398,13 +398,16 @@ def get_available_years():
 
 @app.route('/api/politicians/emdong/<emdong_code>')
 def get_politicians(emdong_code):
-    """읍면동의 정치인 정보"""
+    """읍면동의 정치인 정보 (현재 + 이전 임기)"""
     # 지방 정치인 데이터
     local_data = load_json_file('local_politicians_lda_analysis.json') or {}
     
-    # 시의원, 구의원 데이터
-    si_uiwon = load_json_file('seoul_si_uiwon_8th_real.json') or []
-    gu_uiwon = load_json_file('seoul_gu_uiwon_8th_real.json') or []
+    # 시의원, 구의원 데이터 (제8회)
+    si_uiwon = load_json_file('seoul_si_uiwon_8th_real.json') or {}
+    gu_uiwon = load_json_file('seoul_gu_uiwon_8th_real.json') or {}
+    
+    # 국회의원 데이터
+    assembly_data = load_json_file('assembly_by_region.json') or {}
     
     politicians = []
     
@@ -466,6 +469,21 @@ def get_politicians(emdong_code):
                 'party': pol.get('party', ''),
                 'district': pol.get('district', '')
             })
+    
+    # 국회의원 찾기
+    if 'regional' in assembly_data and '서울특별시' in assembly_data['regional']:
+        seoul_members = assembly_data['regional']['서울특별시']
+        for member in seoul_members:
+            # 구 이름이 지역구에 포함되어 있는지 확인
+            district = member.get('district', '')
+            if gu_name and gu_name.replace('구', '') in district:
+                politicians.append({
+                    'name': member.get('name', ''),
+                    'position': '국회의원',
+                    'party': member.get('party', ''),
+                    'district': district,
+                    'committee': member.get('committee', '')
+                })
     
     return jsonify(politicians)
 
