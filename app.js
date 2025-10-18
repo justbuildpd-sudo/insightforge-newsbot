@@ -2111,16 +2111,15 @@ function drawPopulationChart() {
         ])
         .range([height, 0]);
     
-    // X축 그리기
+    // X축 그리기 (연 단위만 표시)
     svg.append('g')
         .attr('transform', `translate(0,${height})`)
         .call(d3.axisBottom(x)
-            .ticks(d3.timeMonth.every(1))
-            .tickFormat(d3.timeFormat('%Y-%m')))
+            .ticks(d3.timeYear.every(1))
+            .tickFormat(d3.timeFormat('%Y')))
         .selectAll('text')
-        .attr('transform', 'rotate(-45)')
-        .style('text-anchor', 'end')
-        .style('font-size', '11px');
+        .style('font-size', '12px')
+        .style('font-weight', 'bold');
     
     // Y축 그리기
     svg.append('g')
@@ -2171,125 +2170,91 @@ function drawPopulationChart() {
         }
     });
     
-    // 라인 생성 함수
+    // 총 인구 라인만 표시
     const line = d3.line()
         .x(d => x(d.parsedDate))
         .y(d => y(d.population))
         .curve(d3.curveMonotoneX);
     
-    const maleLine = d3.line()
-        .x(d => x(d.parsedDate))
-        .y(d => y(d.male))
-        .curve(d3.curveMonotoneX);
-    
-    const femaleLine = d3.line()
-        .x(d => x(d.parsedDate))
-        .y(d => y(d.female))
-        .curve(d3.curveMonotoneX);
-    
-    // 총 인구 라인
     svg.append('path')
         .datum(timeseriesData)
         .attr('fill', 'none')
         .attr('stroke', '#3b82f6')
-        .attr('stroke-width', 3)
+        .attr('stroke-width', 2.5)
         .attr('d', line);
     
-    // 남성 인구 라인
-    svg.append('path')
-        .datum(timeseriesData)
-        .attr('fill', 'none')
-        .attr('stroke', '#60a5fa')
-        .attr('stroke-width', 2)
-        .attr('stroke-dasharray', '5,5')
-        .attr('d', maleLine);
-    
-    // 여성 인구 라인
-    svg.append('path')
-        .datum(timeseriesData)
-        .attr('fill', 'none')
-        .attr('stroke', '#f472b6')
-        .attr('stroke-width', 2)
-        .attr('stroke-dasharray', '5,5')
-        .attr('d', femaleLine);
-    
-    // 데이터 포인트
-    svg.selectAll('.dot')
+    // 인터랙티브 영역 (보이지 않는 넓은 영역)
+    svg.selectAll('.hover-area')
         .data(timeseriesData)
         .enter()
-        .append('circle')
-        .attr('class', 'dot')
-        .attr('cx', d => x(d.parsedDate))
-        .attr('cy', d => y(d.population))
-        .attr('r', 3)
-        .attr('fill', '#3b82f6')
-        .attr('stroke', 'white')
-        .attr('stroke-width', 1.5)
+        .append('rect')
+        .attr('class', 'hover-area')
+        .attr('x', (d, i) => {
+            if (i === 0) return x(d.parsedDate);
+            const prevDate = timeseriesData[i-1].parsedDate;
+            return (x(prevDate) + x(d.parsedDate)) / 2;
+        })
+        .attr('y', 0)
+        .attr('width', (d, i) => {
+            if (i === timeseriesData.length - 1) return width - x(d.parsedDate);
+            const nextDate = timeseriesData[i+1].parsedDate;
+            return (x(nextDate) - x(d.parsedDate)) / 2;
+        })
+        .attr('height', height)
+        .attr('fill', 'transparent')
         .on('mouseover', function(event, d) {
+            // 포인트 표시
+            svg.append('circle')
+                .attr('class', 'hover-dot')
+                .attr('cx', x(d.parsedDate))
+                .attr('cy', y(d.population))
+                .attr('r', 5)
+                .attr('fill', '#1e40af')
+                .attr('stroke', 'white')
+                .attr('stroke-width', 2);
+            
+            // 세로선
+            svg.append('line')
+                .attr('class', 'hover-line')
+                .attr('x1', x(d.parsedDate))
+                .attr('x2', x(d.parsedDate))
+                .attr('y1', 0)
+                .attr('y2', height)
+                .attr('stroke', '#cbd5e1')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '3,3');
+            
             // 툴팁 표시
-            const tooltip = d3.select('body')
+            d3.select('body')
                 .append('div')
                 .attr('class', 'tooltip')
                 .style('position', 'absolute')
                 .style('background', 'white')
-                .style('padding', '8px 12px')
-                .style('border', '1px solid #ccc')
-                .style('border-radius', '4px')
-                .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
+                .style('padding', '10px 14px')
+                .style('border', '2px solid #3b82f6')
+                .style('border-radius', '6px')
+                .style('box-shadow', '0 4px 6px rgba(0,0,0,0.15)')
                 .style('pointer-events', 'none')
-                .style('font-size', '12px')
+                .style('font-size', '13px')
                 .html(`
-                    <div><strong>${d.date}</strong></div>
-                    <div>총 인구: ${d.population.toLocaleString()}명</div>
+                    <div style="font-weight: bold; color: #1e40af; margin-bottom: 6px;">${d.date}</div>
+                    <div>총 인구: <strong>${d.population.toLocaleString()}명</strong></div>
                     <div>남성: ${d.male.toLocaleString()}명</div>
                     <div>여성: ${d.female.toLocaleString()}명</div>
-                    <div>증감: ${d.change >= 0 ? '+' : ''}${d.change.toLocaleString()}명</div>
+                    <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #e5e7eb;">
+                        증감: <strong style="color: ${d.change >= 0 ? '#10b981' : '#ef4444'}">${d.change >= 0 ? '+' : ''}${d.change.toLocaleString()}명</strong>
+                    </div>
                 `)
-                .style('left', (event.pageX + 10) + 'px')
+                .style('left', (event.pageX + 15) + 'px')
                 .style('top', (event.pageY - 10) + 'px');
-            
-            d3.select(this)
-                .attr('r', 5)
-                .attr('fill', '#1e40af');
         })
         .on('mouseout', function() {
             d3.selectAll('.tooltip').remove();
-            d3.select(this)
-                .attr('r', 3)
-                .attr('fill', '#3b82f6');
+            d3.selectAll('.hover-dot').remove();
+            d3.selectAll('.hover-line').remove();
         });
     
-    // 범례
-    const legend = svg.append('g')
-        .attr('transform', `translate(${width - 100}, 0)`);
-    
-    const legendData = [
-        { label: '총 인구', color: '#3b82f6', dash: false },
-        { label: '남성', color: '#60a5fa', dash: true },
-        { label: '여성', color: '#f472b6', dash: true }
-    ];
-    
-    legendData.forEach((item, i) => {
-        const g = legend.append('g')
-            .attr('transform', `translate(0, ${i * 20})`);
-        
-        g.append('line')
-            .attr('x1', 0)
-            .attr('x2', 20)
-            .attr('y1', 9)
-            .attr('y2', 9)
-            .attr('stroke', item.color)
-            .attr('stroke-width', 2)
-            .attr('stroke-dasharray', item.dash ? '3,3' : '0');
-        
-        g.append('text')
-            .attr('x', 25)
-            .attr('y', 9)
-            .attr('dy', '0.35em')
-            .text(item.label)
-            .style('font-size', '12px')
-            .attr('fill', '#374151');
-    });
+    // 범례 제거 (총 인구만 표시하므로 불필요)
     
     // 제목
     svg.append('text')
