@@ -2053,6 +2053,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
     window.currentTimeseriesData = timeseriesData;
     window.currentYearlyBusiness = yearlyBusiness;
     window.currentPoliticians = politicians;
+    window.currentPoliticianTerms = politicianTerms;
     window.currentChartSize = {width, height, margin};
     
     // 인구 그래프 먼저 그리기
@@ -2062,14 +2063,9 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
 function drawPopulationChart() {
     const {width, height, margin} = window.currentChartSize;
     const timeseriesData = window.currentTimeseriesData;
-    const politicians = window.currentPoliticians;
+    const politicianTerms = window.currentPoliticianTerms || [];
     
-    const politicianTerms = politicians && politicians.length > 0 ? [{
-        startDate: new Date('2022-07-01'),
-        endDate: new Date('2026-06-30'),
-        politicians: politicians,
-        label: '제8회 지방선거 임기'
-    }] : [];
+    console.log('📊 정치인 임기 정보:', politicianTerms);
     
     // 컨테이너 초기화
     d3.select('#chartContainer').html('');
