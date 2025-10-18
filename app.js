@@ -275,32 +275,29 @@ async function loadEmdongList(sigunguCode) {
 
 async function selectEmdong(emdongCode) {
     try {
-        // 연령별 상세 데이터 먼저 로드 (정확한 인구 수치)
-        const enhancedResponse = await fetch(`${API_BASE}/api/emdong/${emdongCode}/enhanced`);
-        const enhancedData = await enhancedResponse.json();
+        console.log(`🔍 읍면동 선택: ${emdongCode}`);
         
-        // 기본 데이터 조회
-        const response = await fetch(`${API_BASE}/api/national/emdong/${emdongCode}?year=${selectedYear}`);
-        const data = await response.json();
+        // Enhanced API에서 모든 데이터 가져오기
+        const response = await fetch(`${API_BASE}/api/emdong/${emdongCode}/enhanced?year=${selectedYear}`);
         
-        // 연령별 데이터의 정확한 인구 수치로 덮어쓰기
-        if (enhancedData.latest && enhancedData.latest.basic) {
-            if (!data.household) data.household = {};
-            // 정확한 인구로 교체
-            data.household.family_member_cnt = enhancedData.latest.basic.total_population;
-            // 가구수는 인구/평균가구원수로 계산 (더 정확)
-            const avgSize = data.household.avg_family_member_cnt || 2.0;
-            data.household.household_cnt = Math.round(enhancedData.latest.basic.total_population / avgSize);
+        if (!response.ok) {
+            throw new Error(`API 오류: ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('📦 읍면동 데이터:', data);
         
         currentRegion = data;
         
-        // 정치인 정보 가져오기
-        const politiciansResponse = await fetch(`${API_BASE}/api/politicians/emdong/${emdongCode}`);
-        const politiciansData = await politiciansResponse.json();
-        
-        // 데이터 병합
-        data.politicians = politiciansData.politicians || [];
+        // 정치인 정보 가져오기 (있다면)
+        try {
+            const politiciansResponse = await fetch(`${API_BASE}/api/politicians/emdong/${emdongCode}`);
+            const politiciansData = await politiciansResponse.json();
+            data.politicians = politiciansData || [];
+        } catch (e) {
+            console.log('정치인 정보 없음');
+            data.politicians = [];
+        }
         
         renderEmdongDetail(data);
         
