@@ -1159,11 +1159,23 @@ function renderHouseTypeBar(label, percent, count, color) {
 }
 
 function renderEmdongDetail(emdong) {
+    console.log('🎨 renderEmdongDetail 호출됨');
+    console.log('📦 렌더링할 데이터:', emdong);
+    
     const detailView = document.getElementById('detailView');
+    
+    if (!detailView) {
+        console.error('❌ detailView 요소를 찾을 수 없습니다');
+        return;
+    }
     
     const household = emdong.household || {};
     const house = emdong.house || {};
     const company = emdong.company || {};
+    
+    console.log('📊 가구:', household);
+    console.log('🏢 사업체:', company);
+    console.log('🏠 주택:', house);
     
     detailView.innerHTML = `
         <div class="max-w-5xl">
