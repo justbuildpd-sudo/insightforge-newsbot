@@ -2782,31 +2782,6 @@ function drawPopulationChart() {
         .style('font-size', '11px')
         .attr('fill', '#6b7280')
         .text('인구 (명)');
-    
-    // 기간 선택 브러시 추가
-    const brush = d3.brushX()
-        .extent([[0, 0], [width, height]])
-        .on('end', function(event) {
-            if (!event.selection) {
-                // 선택 해제
-                d3.select('#periodStats').html('');
-                return;
-            }
-            
-            const [x0, x1] = event.selection;
-            const selectedDates = timeseriesData.filter(d => {
-                const xPos = x(d.parsedDate);
-                return xPos >= x0 && xPos <= x1;
-            });
-            
-            if (selectedDates.length > 0) {
-                showPeriodStats(selectedDates);
-            }
-        });
-    
-    svg.append('g')
-        .attr('class', 'brush')
-        .call(brush);
 }
 
 // 선택 기간 통계 표시
