@@ -219,6 +219,17 @@ async function toggleSigungu(sigunguCode) {
         if (sido) await loadSigunguList(sido.sido_cd || sido.code);
     } else {
         expandedSigungus.add(sigunguCode);
+        
+        // 시군구 상세 정보도 로드
+        try {
+            const response = await fetch(`${API_BASE}/api/national/sigungu/${sigunguCode}/detail`);
+            const data = await response.json();
+            console.log('📦 시군구 상세 데이터 (toggle):', data);
+            renderSigunguDetail(data);
+        } catch (error) {
+            console.error('❌ 시군구 상세 정보 로드 실패:', error);
+        }
+        
         // 부모 시도 다시 로드
         const sido = allSido.find(s => expandedSidos.has(s.sido_cd || s.code));
         if (sido) await loadSigunguList(sido.sido_cd || sido.code);
