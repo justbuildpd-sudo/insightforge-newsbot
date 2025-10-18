@@ -1999,7 +1999,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
     container.innerHTML = `
         <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
             <div class="flex justify-between items-center mb-3">
-                <h3 class="font-bold text-lg">시계열 분석</h3>
+                <h3 class="font-bold text-lg">시계열 분석 - 정치와 지역 성장 관계분석</h3>
                 <div class="flex gap-2">
                     <button onclick="switchMetric('population')" id="btn-population" class="px-3 py-1 text-xs rounded bg-blue-600 text-white">인구</button>
                     <button onclick="switchMetric('business')" id="btn-business" class="px-3 py-1 text-xs rounded bg-gray-200 text-gray-700">사업체</button>
@@ -2007,6 +2007,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
                 </div>
             </div>
             <div id="chartContainer"></div>
+            <div id="periodStats"></div>
         </div>
     `;
     
@@ -2015,13 +2016,38 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
     const width = container.clientWidth - margin.left - margin.right - 40;
     const height = 220 - margin.top - margin.bottom;
     
-    // 정치인 임기 정보 (제8회 지방선거: 2022-07-01 ~ 2026-06-30)
-    const politicianTerms = politicians && politicians.length > 0 ? [{
-        startDate: new Date('2022-07-01'),
-        endDate: new Date('2026-06-30'),
-        politicians: politicians,
-        label: '제8회 지방선거 임기'
-    }] : [];
+    // 정치인 임기 정보 구조화
+    const politicianTerms = [];
+    
+    if (politicians && politicians.length > 0) {
+        // 직위별 그룹화
+        const byPosition = {};
+        politicians.forEach(p => {
+            const pos = p.position || p.type || '기타';
+            if (!byPosition[pos]) byPosition[pos] = [];
+            byPosition[pos].push(p);
+        });
+        
+        // 각 직위별로 임기 추가
+        const positionColors = {
+            '서울시장': '#ef4444',
+            '구청장': '#f97316',
+            '국회의원': '#3b82f6',
+            '시의원': '#10b981',
+            '구의원': '#8b5cf6'
+        };
+        
+        Object.entries(byPosition).forEach(([position, pols]) => {
+            politicianTerms.push({
+                startDate: new Date('2022-07-01'),
+                endDate: new Date('2026-06-30'),
+                politicians: pols,
+                position: position,
+                color: positionColors[position] || '#6b7280',
+                label: `${position} (${pols.length}명)`
+            });
+        });
+    }
     
     // 현재 데이터 저장 (지표 전환용)
     window.currentTimeseriesData = timeseriesData;
@@ -2097,8 +2123,8 @@ function drawPopulationChart() {
         .selectAll('text')
         .style('font-size', '11px');
     
-    // 정치인 임기 배경 표시
-    politicianTerms.forEach(term => {
+    // 정치인 임기 배경 표시 (직위별 색상)
+    politicianTerms.forEach((term, idx) => {
         const termStart = term.startDate;
         const termEnd = term.endDate;
         
@@ -2108,37 +2134,33 @@ function drawPopulationChart() {
             const startX = Math.max(0, x(termStart));
             const endX = Math.min(width, x(termEnd));
             
-            // 배경 사각형
+            // 직위별 높이 구분 (겹치지 않도록)
+            const barHeight = height / Math.max(politicianTerms.length, 1);
+            const yPos = idx * barHeight;
+            
+            // 배경 사각형 (직위별 색상)
             svg.append('rect')
                 .attr('x', startX)
-                .attr('y', 0)
+                .attr('y', yPos)
                 .attr('width', endX - startX)
-                .attr('height', height)
-                .attr('fill', '#fef3c7')  // 노란색 배경
-                .attr('opacity', 0.3)
-                .attr('stroke', '#f59e0b')
+                .attr('height', barHeight)
+                .attr('fill', term.color)
+                .attr('opacity', 0.15)
+                .attr('stroke', term.color)
                 .attr('stroke-width', 1)
                 .attr('stroke-dasharray', '3,3');
             
             // 정치인 정보 텍스트
-            const politicians = term.politicians || [];
-            const uniqueParties = [...new Set(politicians.map(p => p.party))];
+            const uniqueParties = [...new Set(term.politicians.map(p => p.party))];
             const partyText = uniqueParties.slice(0, 2).join(', ') + (uniqueParties.length > 2 ? ' 외' : '');
             
             svg.append('text')
                 .attr('x', startX + 5)
-                .attr('y', 15)
-                .style('font-size', '10px')
-                .style('font-weight', 'bold')
-                .attr('fill', '#92400e')
-                .text(`${term.label} (${politicians.length}명)`);
-            
-            svg.append('text')
-                .attr('x', startX + 5)
-                .attr('y', 28)
+                .attr('y', yPos + 15)
                 .style('font-size', '9px')
-                .attr('fill', '#92400e')
-                .text(partyText);
+                .style('font-weight', 'bold')
+                .attr('fill', term.color)
+                .text(`${term.label}: ${partyText}`);
         }
     });
     
