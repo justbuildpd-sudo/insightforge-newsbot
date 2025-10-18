@@ -2293,11 +2293,211 @@ async function loadSigunguTimeseries(sigunguCode, politicians) {
             return;
         }
         
-        renderTimeseriesChart(data.timeseries, politicians);
+        renderTimeseriesChart(data.timeseries, politicians, data.yearly_business);
         
     } catch (error) {
         console.error('시군구 시계열 데이터 로드 실패:', error);
     }
+}
+
+// 지표 전환 함수
+function switchMetric(metric) {
+    // 버튼 스타일 업데이트
+    ['population', 'business', 'housing'].forEach(m => {
+        const btn = document.getElementById(`btn-${m}`);
+        if (btn) {
+            if (m === metric) {
+                btn.className = 'px-3 py-1 text-xs rounded bg-blue-600 text-white';
+            } else {
+                btn.className = 'px-3 py-1 text-xs rounded bg-gray-200 text-gray-700';
+            }
+        }
+    });
+    
+    // 해당 지표 그래프 그리기
+    if (metric === 'population') {
+        drawPopulationChart();
+    } else if (metric === 'business') {
+        drawBusinessChart();
+    } else if (metric === 'housing') {
+        drawHousingChart();
+    }
+}
+window.switchMetric = switchMetric;
+
+// 사업체 그래프
+function drawBusinessChart() {
+    const {width, height, margin} = window.currentChartSize;
+    const yearlyBusiness = window.currentYearlyBusiness || [];
+    
+    if (yearlyBusiness.length === 0) {
+        d3.select('#chartContainer').html('<div class="text-center py-8 text-gray-500">사업체 데이터 없음</div>');
+        return;
+    }
+    
+    d3.select('#chartContainer').html('');
+    
+    const svg = d3.select('#chartContainer')
+        .append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+    
+    // X축: 연도
+    const x = d3.scaleBand()
+        .domain(yearlyBusiness.map(d => d.year))
+        .range([0, width])
+        .padding(0.3);
+    
+    // Y축: 사업체수
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(yearlyBusiness, d => d.company_cnt) * 1.1])
+        .range([height, 0]);
+    
+    // X축 그리기
+    svg.append('g')
+        .attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll('text')
+        .style('font-size', '11px');
+    
+    // Y축 그리기
+    svg.append('g')
+        .call(d3.axisLeft(y).ticks(5))
+        .selectAll('text')
+        .style('font-size', '11px');
+    
+    // 막대 그래프
+    svg.selectAll('.bar')
+        .data(yearlyBusiness)
+        .enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => x(d.year))
+        .attr('y', d => y(d.company_cnt))
+        .attr('width', x.bandwidth())
+        .attr('height', d => height - y(d.company_cnt))
+        .attr('fill', '#10b981')
+        .on('mouseover', function(event, d) {
+            d3.select('body')
+                .append('div')
+                .attr('class', 'tooltip')
+                .style('position', 'absolute')
+                .style('background', 'white')
+                .style('padding', '8px 12px')
+                .style('border', '1px solid #ccc')
+                .style('border-radius', '4px')
+                .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
+                .style('pointer-events', 'none')
+                .style('font-size', '12px')
+                .html(`
+                    <div><strong>${d.year}년</strong></div>
+                    <div>사업체: ${d.company_cnt.toLocaleString()}개</div>
+                    <div>종사자: ${d.worker_cnt.toLocaleString()}명</div>
+                `)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 10) + 'px');
+        })
+        .on('mouseout', function() {
+            d3.selectAll('.tooltip').remove();
+        });
+    
+    // 제목
+    svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', -15)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '14px')
+        .style('font-weight', 'bold')
+        .text('연도별 사업체 변화');
+}
+
+// 주택 그래프
+function drawHousingChart() {
+    const {width, height, margin} = window.currentChartSize;
+    const yearlyBusiness = window.currentYearlyBusiness || [];
+    
+    if (yearlyBusiness.length === 0) {
+        d3.select('#chartContainer').html('<div class="text-center py-8 text-gray-500">주택 데이터 없음</div>');
+        return;
+    }
+    
+    d3.select('#chartContainer').html('');
+    
+    const svg = d3.select('#chartContainer')
+        .append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+    
+    // X축: 연도
+    const x = d3.scaleBand()
+        .domain(yearlyBusiness.map(d => d.year))
+        .range([0, width])
+        .padding(0.3);
+    
+    // Y축: 주택수
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(yearlyBusiness, d => d.house_cnt) * 1.1])
+        .range([height, 0]);
+    
+    // X축 그리기
+    svg.append('g')
+        .attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll('text')
+        .style('font-size', '11px');
+    
+    // Y축 그리기
+    svg.append('g')
+        .call(d3.axisLeft(y).ticks(5))
+        .selectAll('text')
+        .style('font-size', '11px');
+    
+    // 막대 그래프
+    svg.selectAll('.bar')
+        .data(yearlyBusiness)
+        .enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => x(d.year))
+        .attr('y', d => y(d.house_cnt))
+        .attr('width', x.bandwidth())
+        .attr('height', d => height - y(d.house_cnt))
+        .attr('fill', '#8b5cf6')
+        .on('mouseover', function(event, d) {
+            d3.select('body')
+                .append('div')
+                .attr('class', 'tooltip')
+                .style('position', 'absolute')
+                .style('background', 'white')
+                .style('padding', '8px 12px')
+                .style('border', '1px solid #ccc')
+                .style('border-radius', '4px')
+                .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
+                .style('pointer-events', 'none')
+                .style('font-size', '12px')
+                .html(`
+                    <div><strong>${d.year}년</strong></div>
+                    <div>주택수: ${d.house_cnt.toLocaleString()}호</div>
+                `)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 10) + 'px');
+        })
+        .on('mouseout', function() {
+            d3.selectAll('.tooltip').remove();
+        });
+    
+    // 제목
+    svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', -15)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '14px')
+        .style('font-weight', 'bold')
+        .text('연도별 주택 변화');
 }
 
 // 함수 별칭
