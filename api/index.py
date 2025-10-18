@@ -57,6 +57,37 @@ def load_json_file(filename):
         print(f"Error loading {filename}: {e}")
         return None
 
+@app.route('/api/politicians/si_uiwon')
+def get_si_uiwon():
+    """시의원 데이터 조회 (제8회)"""
+    data = load_json_file('seoul_si_uiwon_8th.json')
+    if data:
+        return jsonify(data)
+    return jsonify({})
+
+@app.route('/api/politicians/gu_uiwon')
+def get_gu_uiwon():
+    """구의원 데이터 조회 (제8회)"""
+    data = load_json_file('seoul_gu_uiwon_8th.json')
+    if data:
+        return jsonify(data)
+    return jsonify({})
+
+@app.route('/api/politicians/national_assembly')
+def get_national_assembly():
+    """국회의원 데이터 조회 (제22대)"""
+    data = load_json_file('national_assembly_22nd.json')
+    if data:
+        # 배열 형태로 변환
+        if isinstance(data, dict):
+            politicians = []
+            for region, pols in data.items():
+                if isinstance(pols, list):
+                    politicians.extend(pols)
+            return jsonify(politicians)
+        return jsonify(data)
+    return jsonify([])
+
 @app.route('/api/population/yearly')
 def get_population_yearly():
     """연도별 인구 데이터 조회 (2008-2025)"""

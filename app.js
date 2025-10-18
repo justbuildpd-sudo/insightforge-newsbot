@@ -1094,14 +1094,121 @@ function renderSigunguDetail(data) {
                 </div>
             </div>
             
+            <!-- 정치인 정보 섹션 -->
+            <div id="politicianSection" class="mb-6"></div>
+            
             <!-- 데이터 출처 -->
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-600">
                 📊 데이터 출처: ${data.data_source || '주민등록 2025-09 (인구/가구 합산)'} | 사업체/주택: SGIS 2023 (집계)
             </div>
         </div>
     `;
+    
+    // 정치인 정보 로드
+    loadSigunguPoliticians(data.sigungu_code, data.full_address);
 }
 
+
+async function loadSigunguPoliticians(sigunguCode, fullAddress) {
+    const section = document.getElementById('politicianSection');
+    if (!section) return;
+    
+    // 서울 구 이름 추출 (예: "서울특별시 강남구" -> "강남구")
+    const guMatch = fullAddress.match(/([가-힣]+구)/);
+    if (!guMatch) {
+        section.innerHTML = '';
+        return;
+    }
+    
+    const guName = guMatch[1];
+    
+    // 현재 정치인 정보 로드 (제8회 기준)
+    let politicians = [];
+    
+    try {
+        // 시의원 데이터
+        const siResponse = await fetch(`${API_BASE}/api/politicians/si_uiwon`);
+        const siData = await siResponse.json();
+        if (siData[guName]) {
+            politicians.push(...siData[guName].map(p => ({...p, position: '시의원'})));
+        }
+        
+        // 구의원 데이터
+        const guResponse = await fetch(`${API_BASE}/api/politicians/gu_uiwon`);
+        const guData = await guResponse.json();
+        if (guData[guName]) {
+            politicians.push(...guData[guName].map(p => ({...p, position: '구의원'})));
+        }
+        
+        // 국회의원 데이터 (해당 구)
+        const naResponse = await fetch(`${API_BASE}/api/politicians/national_assembly`);
+        const naData = await naResponse.json();
+        const naPoliticians = naData.filter(p => p.district && p.district.includes(guName));
+        politicians.push(...naPoliticians.map(p => ({...p, position: '국회의원'})));
+        
+    } catch (error) {
+        console.error('정치인 정보 로드 실패:', error);
+    }
+    
+    if (politicians.length === 0) {
+        section.innerHTML = '';
+        return;
+    }
+    
+    // 정치인 정보 렌더링
+    const byPosition = {};
+    politicians.forEach(p => {
+        const pos = p.position || '기타';
+        if (!byPosition[pos]) byPosition[pos] = [];
+        byPosition[pos].push(p);
+    });
+    
+    let html = `
+        <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+            <h3 class="font-bold text-lg mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                ${guName} 정치인 (제8회 현재)
+            </h3>
+            <div class="grid grid-cols-1 gap-4">
+    `;
+    
+    Object.entries(byPosition).forEach(([position, pols]) => {
+        const colorClass = {
+            '국회의원': 'blue',
+            '시의원': 'green',
+            '구의원': 'purple'
+        }[position] || 'gray';
+        
+        html += `
+            <div class="bg-${colorClass}-50 p-4 rounded-lg border border-${colorClass}-200">
+                <div class="font-bold text-${colorClass}-800 mb-2">${position} (${pols.length}명)</div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    ${pols.map(p => `
+                        <div class="text-sm">
+                            <span class="font-medium">${p.name}</span>
+                            <span class="text-gray-600 text-xs">(${p.party || '-'})</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+            <div class="mt-4 text-sm text-gray-500">
+                💡 타임라인 차트에서 제5-8회 지방선거(2010-2026), 제16-22대 국회의원(2000-2028) 임기를 확인할 수 있습니다.
+            </div>
+        </div>
+    `;
+    
+    section.innerHTML = html;
+    
+    // 시계열 차트에 정치인 정보 반영
+    loadSigunguTimeseries(sigunguCode, politicians);
+}
 
 function renderEmdongDetail(emdong) {
     console.log('🎨 renderEmdongDetail 호출됨');
@@ -2136,9 +2243,13 @@ function drawPopulationChart() {
         d.parsedDate = parseDate(d.date);
     });
     
-    // X축: 시간
+    // X축: 시간 (2000년부터 표시 - 정치인 임기 고려)
+    const dataExtent = d3.extent(timeseriesData, d => d.parsedDate);
+    const extendedStart = new Date('2000-01-01');
+    const extendedEnd = dataExtent[1] > new Date('2026-01-01') ? dataExtent[1] : new Date('2028-12-31');
+    
     const x = d3.scaleTime()
-        .domain(d3.extent(timeseriesData, d => d.parsedDate))
+        .domain([extendedStart, extendedEnd])
         .range([0, width]);
     
     // Y축: 인구
