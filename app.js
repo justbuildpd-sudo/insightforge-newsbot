@@ -2467,16 +2467,13 @@ function drawPopulationChart() {
             const barHeight = Math.min(20, height / (totalBars * 1.2));  // 최대 20px
             const yPos = height - (idx + 1) * barHeight * 1.2;  // 아래에서 위로
             
-            // 주요 정당 추출 (최대 2개)
-            const partyCount = {};
+            // 정당별로 정치인 그룹화
+            const byParty = {};
             term.politicians.forEach(p => {
                 const party = p.party || '무소속';
-                partyCount[party] = (partyCount[party] || 0) + 1;
+                if (!byParty[party]) byParty[party] = [];
+                byParty[party].push(p);
             });
-            const mainParties = Object.entries(partyCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 2)
-                .map(p => p[0]);
             
             // 배경 바 (직위 색상, 반투명)
             svg.append('rect')
@@ -2490,20 +2487,29 @@ function drawPopulationChart() {
                 .attr('stroke-width', 1.5)
                 .attr('rx', 3);
             
-            // 임기 정보 텍스트 (간결하게)
+            // 정치인 이름만 표시 (정당별로 구분)
             const barWidth = endX - startX;
             if (barWidth > 60) {
-                const labelText = `${term.label} (${mainParties.join('·')})`;
+                // 정당별로 정치인 이름 수집
+                const partyGroups = Object.entries(byParty)
+                    .sort((a, b) => b[1].length - a[1].length)  // 인원 많은 순
+                    .map(([party, pols]) => {
+                        const names = pols.slice(0, 2).map(p => p.name).join(', ');
+                        return pols.length > 2 ? `${names} 외${pols.length - 2}` : names;
+                    });
+                
+                // "/" 로 정당 구분
+                const displayText = partyGroups.join(' / ');
                 
                 svg.append('text')
                     .attr('x', startX + 5)
                     .attr('y', yPos + barHeight / 2 + 4)
                     .style('font-size', '10px')
-                    .style('font-weight', '600')
+                    .style('font-weight', '500')
                     .attr('fill', term.color)
-                    .text(labelText)
+                    .text(displayText)
                     .append('title')
-                    .text(`${term.position} ${term.label}\n정치인 ${term.politicians.length}명\n주요 정당: ${mainParties.join(', ')}`);
+                    .text(`${term.position} ${term.label}\n정치인 ${term.politicians.length}명\n${Object.entries(byParty).map(([party, pols]) => `${party}: ${pols.map(p => p.name).join(', ')}`).join('\n')}`);
             }
         }
     });
