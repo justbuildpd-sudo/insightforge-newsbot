@@ -1988,10 +1988,10 @@ function renderTimeseriesChart(timeseriesData) {
     // 컨테이너 초기화
     container.innerHTML = '';
     
-    // 차트 크기
-    const margin = {top: 40, right: 120, bottom: 60, left: 60};
+    // 차트 크기 (너비 넓게, 높이 낮게)
+    const margin = {top: 30, right: 100, bottom: 50, left: 70};
     const width = container.clientWidth - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const height = 250 - margin.top - margin.bottom;
     
     // SVG 생성
     const svg = d3.select('#timeseriesChart')
@@ -2031,12 +2031,16 @@ function renderTimeseriesChart(timeseriesData) {
             .tickFormat(d3.timeFormat('%Y-%m')))
         .selectAll('text')
         .attr('transform', 'rotate(-45)')
-        .style('text-anchor', 'end');
+        .style('text-anchor', 'end')
+        .style('font-size', '11px');
     
     // Y축 그리기
     svg.append('g')
         .call(d3.axisLeft(y)
-            .tickFormat(d => d.toLocaleString()));
+            .ticks(5)
+            .tickFormat(d => d.toLocaleString()))
+        .selectAll('text')
+        .style('font-size', '11px');
     
     // 라인 생성 함수
     const line = d3.line()
@@ -2088,10 +2092,10 @@ function renderTimeseriesChart(timeseriesData) {
         .attr('class', 'dot')
         .attr('cx', d => x(d.parsedDate))
         .attr('cy', d => y(d.population))
-        .attr('r', 4)
+        .attr('r', 3)
         .attr('fill', '#3b82f6')
         .attr('stroke', 'white')
-        .attr('stroke-width', 2)
+        .attr('stroke-width', 1.5)
         .on('mouseover', function(event, d) {
             // 툴팁 표시
             const tooltip = d3.select('body')
@@ -2116,13 +2120,13 @@ function renderTimeseriesChart(timeseriesData) {
                 .style('top', (event.pageY - 10) + 'px');
             
             d3.select(this)
-                .attr('r', 6)
+                .attr('r', 5)
                 .attr('fill', '#1e40af');
         })
         .on('mouseout', function() {
             d3.selectAll('.tooltip').remove();
             d3.select(this)
-                .attr('r', 4)
+                .attr('r', 3)
                 .attr('fill', '#3b82f6');
         });
     
@@ -2161,19 +2165,20 @@ function renderTimeseriesChart(timeseriesData) {
     // 제목
     svg.append('text')
         .attr('x', width / 2)
-        .attr('y', -20)
+        .attr('y', -15)
         .attr('text-anchor', 'middle')
-        .style('font-size', '16px')
+        .style('font-size', '14px')
         .style('font-weight', 'bold')
         .text('월별 인구 변화 추이');
     
     // Y축 레이블
     svg.append('text')
         .attr('transform', 'rotate(-90)')
-        .attr('y', -40)
+        .attr('y', -50)
         .attr('x', -height / 2)
         .attr('text-anchor', 'middle')
-        .style('font-size', '12px')
+        .style('font-size', '11px')
+        .attr('fill', '#6b7280')
         .text('인구 (명)');
 }
 
