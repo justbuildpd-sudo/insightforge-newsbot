@@ -1173,23 +1173,28 @@ function renderEmdongDetail(emdong) {
     const house = emdong.house || {};
     const company = emdong.company || {};
     
-    // SGIS 데이터는 100 단위로 저장되어 있음 (127 = 12,700가구)
+    // 주민등록 데이터는 실제 단위, SGIS 데이터는 100배 필요
+    const is_jumin_data = emdong.data_source && emdong.data_source.includes('주민등록');
+    const multiplier = is_jumin_data ? 1 : 100;
+    
     const household_real = {
-        household_cnt: (household.household_cnt || 0) * 100,
-        family_member_cnt: (household.family_member_cnt || 0) * 100,
-        avg_family_member_cnt: household.avg_family_member_cnt || 0
+        household_cnt: (household.household_cnt || 0) * multiplier,
+        family_member_cnt: (household.family_member_cnt || 0) * multiplier,
+        avg_family_member_cnt: household.avg_family_member_cnt || 0,
+        male_population: (household.male_population || 0) * multiplier,
+        female_population: (household.female_population || 0) * multiplier
     };
     
     const house_real = {
-        house_cnt: (house.house_cnt || 0) * 100
+        house_cnt: (house.house_cnt || 0) * 100  // 주택은 SGIS만
     };
     
     const company_real = {
-        corp_cnt: (company.corp_cnt || 0) * 100,
+        corp_cnt: (company.corp_cnt || 0) * 100,  // 사업체는 SGIS만
         tot_worker: (company.tot_worker || 0) * 100
     };
     
-    console.log('📊 가구 (실제):', household_real);
+    console.log('📊 가구 (실제):', household_real, `[출처: ${emdong.data_source || 'SGIS'}]`);
     console.log('🏢 사업체 (실제):', company_real);
     console.log('🏠 주택 (실제):', house_real);
     

@@ -132,7 +132,7 @@ def get_emdong_detail(emdong_code):
 
 @app.route('/api/emdong/<emdong_code>/enhanced')
 def get_emdong_enhanced(emdong_code):
-    """읍면동 향상된 상세 정보"""
+    """읍면동 향상된 상세 정보 - 주민등록 인구 우선 사용"""
     year = request.args.get('year', '2023')
     
     # 기본 정보
@@ -146,11 +146,17 @@ def get_emdong_enhanced(emdong_code):
                         base_data = emdong
                         break
     
-    # comprehensive stats에서 읍면동 데이터
+    # comprehensive stats에서 읍면동 데이터 (사업체, 주택 등)
     comprehensive_stats = load_json_file('sgis_comprehensive_stats.json') or {}
     emdong_stats = {}
     if 'regions' in comprehensive_stats and emdong_code in comprehensive_stats['regions']:
         emdong_stats = comprehensive_stats['regions'][emdong_code]
+    
+    # 주민등록 인구 데이터 (가장 정확)
+    jumin_data = load_json_file('jumin_population_2025.json') or {}
+    jumin_info = {}
+    if 'regions' in jumin_data and emdong_code in jumin_data['regions']:
+        jumin_info = jumin_data['regions'][emdong_code]
     
     # 멀티 year 통계 데이터
     multiyear_data = load_json_file('sgis_enhanced_multiyear_stats.json') or {}
@@ -160,11 +166,22 @@ def get_emdong_enhanced(emdong_code):
         if 'years' in emdong_data and year in emdong_data['years']:
             year_stats = emdong_data['years'][year]
     
+    # 데이터 병합 - 주민등록 데이터 우선
     result = {
         **base_data,
-        **emdong_stats,
-        **year_stats
+        **emdong_stats
     }
+    
+    # 주민등록 데이터로 가구/인구 덮어쓰기 (더 정확함)
+    if jumin_info:
+        result['household'] = {
+            'household_cnt': jumin_info.get('household_cnt', 0),
+            'family_member_cnt': jumin_info.get('total_population', 0),
+            'avg_family_member_cnt': jumin_info.get('avg_household_size', 0),
+            'male_population': jumin_info.get('male_population', 0),
+            'female_population': jumin_info.get('female_population', 0)
+        }
+        result['data_source'] = '주민등록 2025-09'
     
     return jsonify(result)
 
