@@ -2129,10 +2129,10 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
         </div>
     `;
     
-    // 차트 크기 (너비 넓게, 높이 낮게)
-    const margin = {top: 30, right: 100, bottom: 50, left: 70};
+    // 차트 크기 (타임라인에 맞게 높이 증가)
+    const margin = {top: 40, right: 120, bottom: 60, left: 80};
     const width = container.clientWidth - margin.left - margin.right - 40;
-    const height = 220 - margin.top - margin.bottom;
+    const height = 400 - margin.top - margin.bottom;  // 높이 증가
     
     // 정치인 임기 정보 구조화 (지방선거 5-8회 + 국회의원 16-22대)
     const politicianTerms = [];
@@ -2260,15 +2260,17 @@ function drawPopulationChart() {
         ])
         .range([height, 0]);
     
-    // X축 그리기 (연 단위만 표시)
+    // X축 그리기 (2년 간격으로 표시 - 밀집도 완화)
     svg.append('g')
         .attr('transform', `translate(0,${height})`)
         .call(d3.axisBottom(x)
-            .ticks(d3.timeYear.every(1))
+            .ticks(d3.timeYear.every(2))  // 2년 간격
             .tickFormat(d3.timeFormat('%Y')))
         .selectAll('text')
-        .style('font-size', '12px')
-        .style('font-weight', 'bold');
+        .style('font-size', '11px')
+        .style('font-weight', 'bold')
+        .attr('transform', 'rotate(-45)')
+        .style('text-anchor', 'end');
     
     // Y축 그리기
     svg.append('g')
@@ -2278,10 +2280,57 @@ function drawPopulationChart() {
         .selectAll('text')
         .style('font-size', '11px');
     
-    // 정치인 임기 배경 표시 (직위별 색상)
-    politicianTerms.forEach((term, idx) => {
+    // 정당별 색상 정의
+    const partyColors = {
+        '국민의힘': '#E61E2B',
+        '더불어민주당': '#1E90FF',
+        '민주당': '#1E90FF',
+        '조국혁신당': '#FF6B9D',
+        '개혁신당': '#00A0E9',
+        '진보당': '#EA5504',
+        '무소속': '#808080',
+        '새누리당': '#B8003C',
+        '자유한국당': '#B8003C',
+        '정의당': '#FFCC00',
+        '기타': '#999999'
+    };
+    
+    // 직위별 Y 위치 정의 (위에서 아래로)
+    const positionLanes = {
+        '국회의원': {y: 0, height: height * 0.25},
+        '시의원': {y: height * 0.25, height: height * 0.25},
+        '구의원': {y: height * 0.5, height: height * 0.25},
+        '기타': {y: height * 0.75, height: height * 0.25}
+    };
+    
+    // 직위별 배경 영역 표시
+    Object.entries(positionLanes).forEach(([position, lane]) => {
+        if (position === '기타') return;
+        
+        svg.append('rect')
+            .attr('x', 0)
+            .attr('y', lane.y)
+            .attr('width', width)
+            .attr('height', lane.height)
+            .attr('fill', position === '국회의원' ? '#E3F2FD' : position === '시의원' ? '#E8F5E9' : '#F3E5F5')
+            .attr('opacity', 0.3);
+        
+        // 직위 레이블
+        svg.append('text')
+            .attr('x', -10)
+            .attr('y', lane.y + lane.height / 2)
+            .attr('text-anchor', 'end')
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .attr('fill', '#666')
+            .text(position);
+    });
+    
+    // 정치인 임기 및 이름 표시
+    politicianTerms.forEach((term) => {
         const termStart = term.startDate;
         const termEnd = term.endDate;
+        const position = term.position;
         
         // 그래프 범위 내에 있는지 확인
         const xDomain = x.domain();
@@ -2289,48 +2338,114 @@ function drawPopulationChart() {
             const startX = Math.max(0, x(termStart));
             const endX = Math.min(width, x(termEnd));
             
-            // 직위별 높이 구분 (겹치지 않도록)
-            const barHeight = height / Math.max(politicianTerms.length, 1);
-            const yPos = idx * barHeight;
+            const lane = positionLanes[position] || positionLanes['기타'];
             
-            // 배경 사각형 (직위별 색상)
-            svg.append('rect')
-                .attr('x', startX)
-                .attr('y', yPos)
-                .attr('width', endX - startX)
-                .attr('height', barHeight)
-                .attr('fill', term.color)
-                .attr('opacity', 0.15)
-                .attr('stroke', term.color)
-                .attr('stroke-width', 1)
-                .attr('stroke-dasharray', '3,3');
+            // 같은 직위, 같은 기간의 정치인들을 정당별로 그룹화
+            const byParty = {};
+            term.politicians.forEach(p => {
+                const party = p.party || '무소속';
+                if (!byParty[party]) byParty[party] = [];
+                byParty[party].push(p);
+            });
             
-            // 정치인 정보 텍스트
-            const uniqueParties = [...new Set(term.politicians.map(p => p.party))];
-            const partyText = uniqueParties.slice(0, 2).join(', ') + (uniqueParties.length > 2 ? ' 외' : '');
+            // 정당별로 작은 바 그리기
+            const partyCount = Object.keys(byParty).length;
+            const barHeight = lane.height / Math.max(partyCount * 1.5, 1);
             
+            Object.entries(byParty).forEach(([party, pols], partyIdx) => {
+                const yPos = lane.y + (partyIdx * barHeight * 1.3) + 10;
+                const partyColor = partyColors[party] || partyColors['기타'];
+                
+                // 정당별 임기 바
+                svg.append('rect')
+                    .attr('x', startX)
+                    .attr('y', yPos)
+                    .attr('width', endX - startX)
+                    .attr('height', barHeight)
+                    .attr('fill', partyColor)
+                    .attr('opacity', 0.7)
+                    .attr('rx', 3)
+                    .attr('ry', 3)
+                    .attr('stroke', partyColor)
+                    .attr('stroke-width', 1.5);
+                
+                // 정치인 이름 표시 (공간이 충분할 때만)
+                const barWidth = endX - startX;
+                if (barWidth > 80) {
+                    const names = pols.slice(0, 3).map(p => p.name).join(', ');
+                    const displayText = pols.length > 3 ? `${names} 외 ${pols.length - 3}` : names;
+                    
+                    svg.append('text')
+                        .attr('x', startX + 5)
+                        .attr('y', yPos + barHeight / 2 + 4)
+                        .style('font-size', '9px')
+                        .style('font-weight', '500')
+                        .attr('fill', 'white')
+                        .text(displayText)
+                        .append('title')
+                        .text(`${party} - ${pols.map(p => p.name).join(', ')}`);
+                }
+                
+                // 정당명 (바 왼쪽에)
+                if (barWidth > 40) {
+                    svg.append('text')
+                        .attr('x', startX + barWidth - 5)
+                        .attr('y', yPos + barHeight / 2 + 4)
+                        .attr('text-anchor', 'end')
+                        .style('font-size', '8px')
+                        .style('font-weight', 'bold')
+                        .attr('fill', 'white')
+                        .text(party);
+                }
+            });
+            
+            // 임기 레이블 (위쪽에)
             svg.append('text')
-                .attr('x', startX + 5)
-                .attr('y', yPos + 15)
-                .style('font-size', '9px')
+                .attr('x', startX + (endX - startX) / 2)
+                .attr('y', lane.y + 8)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
                 .style('font-weight', 'bold')
-                .attr('fill', term.color)
-                .text(`${term.label}: ${partyText}`);
+                .attr('fill', '#444')
+                .text(term.label);
         }
     });
     
-    // 총 인구 라인만 표시
+    // 총 인구 라인 표시 (정치인 바 위에)
     const line = d3.line()
         .x(d => x(d.parsedDate))
         .y(d => y(d.population))
         .curve(d3.curveMonotoneX);
     
-    svg.append('path')
+    // 인구 라인을 맨 위 레이어에
+    const populationLayer = svg.append('g')
+        .attr('class', 'population-layer');
+    
+    populationLayer.append('path')
         .datum(timeseriesData)
         .attr('fill', 'none')
         .attr('stroke', '#3b82f6')
-        .attr('stroke-width', 2.5)
+        .attr('stroke-width', 3)
         .attr('d', line);
+    
+    // 범례 추가 (우측 상단)
+    const legend = svg.append('g')
+        .attr('transform', `translate(${width - 150}, -30)`);
+    
+    legend.append('line')
+        .attr('x1', 0)
+        .attr('x2', 25)
+        .attr('y1', 0)
+        .attr('y2', 0)
+        .attr('stroke', '#3b82f6')
+        .attr('stroke-width', 3);
+    
+    legend.append('text')
+        .attr('x', 30)
+        .attr('y', 5)
+        .style('font-size', '11px')
+        .style('font-weight', '500')
+        .text('총 인구');
     
     // 인터랙티브 영역 (보이지 않는 넓은 영역)
     svg.selectAll('.hover-area')
