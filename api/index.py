@@ -81,37 +81,75 @@ def get_sigungu_detail(sigungu_code):
 
 @app.route('/api/national/sigungu/<sigungu_code>/detail')
 def get_sigungu_detail_with_stats(sigungu_code):
-    """시군구 상세 정보 (통계 포함)"""
+    """시군구 상세 정보 (동별 데이터 합산)"""
     # 기본 정보
     basic_data = get_sigungu_detail(sigungu_code).get_json()
     
-    # 통계 데이터 - 읍면동별 데이터 집계
-    comprehensive_stats = load_json_file('sgis_comprehensive_stats.json') or {}
-    commercial_stats = load_json_file('sgis_commercial_stats.json') or {}
+    # 코드 매핑
+    code_mapping = load_json_file('code_mapping.json') or {}
+    mapping_dict = code_mapping.get('mapping', {})
     
-    # 해당 시군구의 모든 읍면동 데이터 집계
+    # 주민등록 인구 데이터
+    jumin_data = load_json_file('jumin_population_2025.json') or {}
+    
+    # comprehensive stats
+    comprehensive_stats = load_json_file('sgis_comprehensive_stats.json') or {}
+    
+    # 해당 시군구의 모든 읍면동 합산
     total_household = 0
     total_population = 0
+    total_male = 0
+    total_female = 0
+    total_house = 0
     total_company = 0
+    total_worker = 0
+    emdong_count = 0
     
-    if 'regions' in comprehensive_stats:
-        for emdong_code, emdong_data in comprehensive_stats['regions'].items():
-            if emdong_data.get('sigungu_code') == sigungu_code:
-                household = emdong_data.get('household', {})
-                company = emdong_data.get('company', {})
-                total_household += household.get('household_cnt', 0)
-                total_population += household.get('family_member_cnt', 0)
+    # 읍면동 목록에서 각각 집계
+    if 'emdong_list' in basic_data:
+        for emdong in basic_data['emdong_list']:
+            emdong_code = emdong.get('emdong_code')
+            emdong_count += 1
+            
+            # 주민등록 데이터 (코드 매핑 사용)
+            if emdong_code in mapping_dict:
+                jumin_code = mapping_dict[emdong_code]['jumin_code']
+                if 'regions' in jumin_data and jumin_code in jumin_data['regions']:
+                    jumin_info = jumin_data['regions'][jumin_code]
+                    total_household += jumin_info.get('household_cnt', 0)
+                    total_population += jumin_info.get('total_population', 0)
+                    total_male += jumin_info.get('male_population', 0)
+                    total_female += jumin_info.get('female_population', 0)
+            
+            # SGIS 데이터 (사업체, 주택)
+            if 'regions' in comprehensive_stats and emdong_code in comprehensive_stats['regions']:
+                emdong_stats = comprehensive_stats['regions'][emdong_code]
+                house = emdong_stats.get('house', {})
+                company = emdong_stats.get('company', {})
+                total_house += house.get('house_cnt', 0)
                 total_company += company.get('corp_cnt', 0)
+                total_worker += company.get('tot_worker', 0)
     
     result = {
         **basic_data,
         'sigungu_code': sigungu_code,
-        'commercial': commercial_stats.get(sigungu_code, {}),
-        'stats': {
-            'total_household': total_household,
-            'total_population': total_population,
-            'total_company': total_company
-        }
+        'household': {
+            'household_cnt': total_household,
+            'family_member_cnt': total_population,
+            'avg_family_member_cnt': total_population / total_household if total_household > 0 else 0,
+            'male_population': total_male,
+            'female_population': total_female
+        },
+        'house': {
+            'house_cnt': total_house * 100  # SGIS는 100배 필요
+        },
+        'company': {
+            'corp_cnt': total_company * 100,
+            'tot_worker': total_worker * 100
+        },
+        'data_source': '주민등록 2025-09 (인구/가구 합산)',
+        'data_year': '2025-09',
+        'emdong_count': emdong_count
     }
     
     return jsonify(result)
