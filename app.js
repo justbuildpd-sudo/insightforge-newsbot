@@ -2280,6 +2280,77 @@ function drawPopulationChart() {
         .style('font-size', '11px')
         .attr('fill', '#6b7280')
         .text('인구 (명)');
+    
+    // 기간 선택 브러시 추가
+    const brush = d3.brushX()
+        .extent([[0, 0], [width, height]])
+        .on('end', function(event) {
+            if (!event.selection) {
+                // 선택 해제
+                d3.select('#periodStats').html('');
+                return;
+            }
+            
+            const [x0, x1] = event.selection;
+            const selectedDates = timeseriesData.filter(d => {
+                const xPos = x(d.parsedDate);
+                return xPos >= x0 && xPos <= x1;
+            });
+            
+            if (selectedDates.length > 0) {
+                showPeriodStats(selectedDates);
+            }
+        });
+    
+    svg.append('g')
+        .attr('class', 'brush')
+        .call(brush);
+}
+
+// 선택 기간 통계 표시
+function showPeriodStats(selectedData) {
+    const container = document.getElementById('periodStats') || createPeriodStatsContainer();
+    
+    const startData = selectedData[0];
+    const endData = selectedData[selectedData.length - 1];
+    const popChange = endData.population - startData.population;
+    const changePercent = (popChange / startData.population * 100).toFixed(2);
+    
+    container.innerHTML = `
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+            <h4 class="font-bold text-sm mb-2 text-blue-900">📊 선택 기간 통계</h4>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                    <div class="text-gray-600">기간</div>
+                    <div class="font-semibold">${startData.date} ~ ${endData.date}</div>
+                </div>
+                <div>
+                    <div class="text-gray-600">인구 변화</div>
+                    <div class="font-semibold ${popChange >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${popChange >= 0 ? '+' : ''}${popChange.toLocaleString()}명 (${changePercent >= 0 ? '+' : ''}${changePercent}%)
+                    </div>
+                </div>
+                <div>
+                    <div class="text-gray-600">시작 인구</div>
+                    <div class="font-semibold">${startData.population.toLocaleString()}명</div>
+                </div>
+                <div>
+                    <div class="text-gray-600">종료 인구</div>
+                    <div class="font-semibold">${endData.population.toLocaleString()}명</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createPeriodStatsContainer() {
+    const container = document.createElement('div');
+    container.id = 'periodStats';
+    const chartContainer = document.getElementById('timeseriesChart');
+    if (chartContainer) {
+        chartContainer.appendChild(container);
+    }
+    return container;
 }
 
 // 시군구용 시계열 로드 (정치인 데이터 포함 가능)
