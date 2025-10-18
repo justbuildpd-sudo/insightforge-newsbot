@@ -1203,7 +1203,7 @@ function renderEmdongDetail(emdong) {
             <!-- 헤더 -->
             <div class="mb-6">
                 <h2 class="text-3xl font-bold text-gray-900">${emdong.full_address || (emdong.sido_name + ' ' + emdong.sigungu_name + ' ' + emdong.emdong_name)}</h2>
-                <p class="text-gray-600 mt-1">행정동 코드: ${emdong.emdong_code || emdong.code} | 최신 데이터: ${selectedYear}년</p>
+                <p class="text-gray-600 mt-1">행정동 코드: ${emdong.emdong_code || emdong.code} | 인구 데이터: ${emdong.data_year || selectedYear + '년'}</p>
             </div>
             
             <!-- 시계열 차트 영역 -->
@@ -1215,13 +1215,13 @@ function renderEmdongDetail(emdong) {
             <!-- 주요 통계 카드 (미니 그래프 포함) -->
             <div id="mainStatsCards" class="grid grid-cols-4 gap-4 mb-6">
                 <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl shadow-lg text-white">
-                    <div class="text-xs opacity-90 mb-1">인구 (${selectedYear}년)</div>
+                    <div class="text-xs opacity-90 mb-1">인구 (${emdong.data_year || selectedYear + '년'})</div>
                     <div class="text-2xl font-bold mb-1">${household_real.family_member_cnt.toLocaleString()}<span class="text-sm ml-1">명</span></div>
                     <div class="h-12 mb-1" id="miniChart-population" style="min-height: 48px;"></div>
                 </div>
                 
                 <div class="bg-gradient-to-br from-green-500 to-green-600 p-4 rounded-xl shadow-lg text-white">
-                    <div class="text-xs opacity-90 mb-1">가구수 (${selectedYear}년)</div>
+                    <div class="text-xs opacity-90 mb-1">가구수 (${emdong.data_year || selectedYear + '년'})</div>
                     <div class="text-2xl font-bold mb-1">${household_real.household_cnt.toLocaleString()}<span class="text-sm ml-1">가구</span></div>
                     <div class="h-12 mb-1" id="miniChart-household" style="min-height: 48px;"></div>
                 </div>
@@ -1291,7 +1291,7 @@ function renderEmdongDetail(emdong) {
             </div>
             
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-                <strong>📊 데이터 출처:</strong> 통계지리정보서비스(SGIS) 2023년 기준
+                <strong>📊 데이터 출처:</strong> ${emdong.data_source ? '주민등록인구통계 2025년 9월' : '통계지리정보서비스(SGIS) 2023년'} (인구/가구) | SGIS 2023년 (사업체/주택)
             </div>
         </div>
     `;
