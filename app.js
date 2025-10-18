@@ -161,6 +161,7 @@ async function toggleSido(sidoCode) {
         await loadSigunguList(sidoCode);
     }
 }
+window.toggleSido = toggleSido;
 
 async function loadSigunguList(sidoCode) {
     try {
@@ -224,6 +225,7 @@ async function toggleSigungu(sigunguCode) {
         await loadEmdongList(sigunguCode);
     }
 }
+window.toggleSigungu = toggleSigungu;
 
 async function selectSigungu(sigunguCode) {
     console.log('🔍 시군구 선택:', sigunguCode);
@@ -245,6 +247,8 @@ async function selectSigungu(sigunguCode) {
         await toggleSigungu(sigunguCode);
     }
 }
+// 전역 등록
+window.selectSigungu = selectSigungu;
 
 async function loadEmdongList(sigunguCode) {
     try {
@@ -322,6 +326,7 @@ async function selectEmdong(emdongCode) {
         console.error('❌ 읍면동 상세 정보 로드 실패:', error);
     }
 }
+window.selectEmdong = selectEmdong;
 
 async function loadTimeseriesData(emdongCode) {
     try {
@@ -1941,15 +1946,3 @@ async function performGlobalSearch(query) {
     }
 }
 
-// ============================================
-// 전역 함수 등록 (HTML onclick에서 사용)
-// ============================================
-
-window.toggleSido = toggleSido;
-window.toggleSigungu = toggleSigungu;
-window.selectSigungu = selectSigungu;
-window.selectEmdong = selectEmdong;
-window.toggleSeoul = toggleSeoul;
-window.toggleGu = toggleGu;
-window.selectRegion = selectRegion;
-window.toggleLDAPanel = toggleLDAPanel;
