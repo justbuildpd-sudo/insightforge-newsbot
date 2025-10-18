@@ -26,11 +26,25 @@ if DATA_DIR.exists():
 data_cache = {}
 
 def load_json_file(filename):
-    """JSON 파일 로드 및 캐싱"""
+    """JSON 파일 로드 및 캐싱 (gzip 지원)"""
     if filename in data_cache:
         return data_cache[filename]
     
     file_path = DATA_DIR / filename
+    
+    # gzip 파일 먼저 시도
+    gz_path = DATA_DIR / (filename + '.gz')
+    if gz_path.exists():
+        try:
+            import gzip
+            with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
+                data = json.load(f)
+                data_cache[filename] = data
+                return data
+        except Exception as e:
+            print(f"Error loading {filename}.gz: {e}")
+    
+    # 일반 파일
     if not file_path.exists():
         return None
     
@@ -264,8 +278,8 @@ def get_emdong_timeseries(emdong_code):
     if emdong_code in mapping_dict:
         jumin_code = mapping_dict[emdong_code]['jumin_code']
     
-    # 월별 인구 데이터 (2022-2025)
-    monthly_data_file = load_json_file('jumin_monthly_2022_2025.json') or {}
+    # 월별 인구 데이터 (2008-2025)
+    monthly_data_file = load_json_file('jumin_monthly_full.json') or {}
     monthly_list = []
     
     # jumin_code로 월별 데이터 찾기
@@ -335,7 +349,7 @@ def get_emdong_timeseries(emdong_code):
 def get_sigungu_timeseries(sigungu_code):
     """시군구 시계열 데이터 (읍면동 합산)"""
     # 월별 인구 데이터 직접 사용
-    monthly_data_file = load_json_file('jumin_monthly_2022_2025.json') or {}
+    monthly_data_file = load_json_file('jumin_monthly_full.json') or {}
     monthly_list = []
     
     # 시군구 코드로 직접 찾기 (예: 11230 -> 1123000000)
@@ -361,7 +375,7 @@ def get_sigungu_timeseries(sigungu_code):
 def get_sido_timeseries(sido_code):
     """시도 시계열 데이터"""
     # 월별 인구 데이터 직접 사용
-    monthly_data_file = load_json_file('jumin_monthly_2022_2025.json') or {}
+    monthly_data_file = load_json_file('jumin_monthly_full.json') or {}
     monthly_list = []
     
     # 시도 코드로 찾기 (예: 11 -> 1100000000)

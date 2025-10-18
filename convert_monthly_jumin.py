@@ -23,9 +23,12 @@ def parse_number(val):
 # 데이터 수집
 monthly_data = {}
 
-# URL 인코딩된 파일 찾기
-human_files = glob.glob('human/*.csv')
-target_files = sorted([f for f in human_files if any(str(y) in f for y in [2022, 2023, 2024, 2025])])
+# URL 인코딩된 파일 찾기 (2018년부터: 제7회, 제8회 지방선거 포함)
+human_files = glob.glob('human/*%EC%9B%94%EA%B0%84.csv')
+# "주민등록인구및세대현황" 파일만, 2018년 이후만
+target_files = sorted([f for f in human_files 
+                      if '%EC%9D%B8%EA%B5%AC%EC%A6%9D%EA%B0%90' not in f 
+                      and any(str(y) in f for y in range(2018, 2026))])
 
 print(f'📁 발견된 파일: {len(target_files)}개\n')
 
@@ -136,12 +139,12 @@ if sample_code in monthly_data:
 # 저장
 output = {
     'data_source': '주민등록인구통계',
-    'period': '2022-01 ~ 2025-09',
+    'period': '2018-01 ~ 2025-09',
     'total_regions': total_regions,
     'regions': monthly_data
 }
 
-output_file = 'insightforge-web/data/jumin_monthly_2022_2025.json'
+output_file = 'insightforge-web/data/jumin_monthly_full.json'
 with open(output_file, 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=2)
 
