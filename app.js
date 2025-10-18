@@ -715,12 +715,23 @@ function renderPoliticiansSection(politicians) {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 ${politicians.map(p => {
                     const colorClass = partyColors[p.party] || partyColors['기타'];
+                    
+                    // 아이콘 매핑
+                    const icons = {
+                        '서울시장': '🏛️',
+                        '구청장': '🏢',
+                        '국회의원': '🏛️',
+                        '시의원': '🏙️',
+                        '구의원': '🏘️'
+                    };
+                    const icon = icons[p.position] || '👤';
+                    
                     return `
                         <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div class="text-2xl mb-2">${p.icon}</div>
-                            <div class="text-xs text-gray-500 mb-1">${p.type}</div>
+                            <div class="text-2xl mb-2">${icon}</div>
+                            <div class="text-xs text-gray-500 mb-1">${p.position || '정치인'}</div>
                             <div class="font-bold text-lg mb-2">${p.name}</div>
-                            <div class="text-sm text-gray-600 mb-2">${p.district}</div>
+                            <div class="text-sm text-gray-600 mb-2">${p.district || ''}</div>
                             <div class="inline-block px-2 py-1 text-xs rounded border ${colorClass}">
                                 ${p.party}
                             </div>
