@@ -2125,6 +2125,20 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
                 </div>
             </div>
             <div id="chartContainer"></div>
+            <div id="periodInfo" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-sm font-semibold text-blue-900">선택 기간: </span>
+                        <span id="selectedPeriod" class="text-sm text-blue-700"></span>
+                    </div>
+                    <button onclick="showPeriodPoliticians()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        해당 기간 지역 정치인 보기
+                    </button>
+                </div>
+            </div>
             <div id="periodStats"></div>
         </div>
     `;
@@ -2216,8 +2230,161 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
     drawPopulationChart();
 }
 
-// 정치인 상세 정보 팝업
-function showPoliticianDetail(term) {
+// 선택된 기간의 정치인 보기
+function showPeriodPoliticians() {
+    const selectedPeriod = window.selectedPeriod;
+    if (!selectedPeriod) {
+        alert('기간을 선택해주세요. 그래프를 드래그하여 기간을 선택할 수 있습니다.');
+        return;
+    }
+    
+    const allTerms = window.currentPoliticianTerms || [];
+    
+    // 선택된 기간과 겹치는 정치인 임기 찾기
+    const overlappingTerms = allTerms.filter(term => {
+        return term.startDate <= selectedPeriod.end && term.endDate >= selectedPeriod.start;
+    });
+    
+    if (overlappingTerms.length === 0) {
+        alert('선택한 기간에 해당하는 정치인이 없습니다.');
+        return;
+    }
+    
+    // 직위별로 그룹화
+    const byPosition = {};
+    overlappingTerms.forEach(term => {
+        const position = term.position;
+        if (!byPosition[position]) byPosition[position] = [];
+        
+        // 정치인들을 정당별로 분류
+        const byParty = {};
+        term.politicians.forEach(p => {
+            const party = p.party || '무소속';
+            if (!byParty[party]) byParty[party] = [];
+            byParty[party].push(p);
+        });
+        
+        byPosition[position].push({
+            label: term.label,
+            byParty: byParty,
+            color: term.color
+        });
+    });
+    
+    // 정당별 색상
+    const partyColors = {
+        '국민의힘': '#E61E2B',
+        '더불어민주당': '#1E90FF',
+        '민주당': '#1E90FF',
+        '조국혁신당': '#FF6B9D',
+        '개혁신당': '#00A0E9',
+        '진보당': '#EA5504',
+        '무소속': '#808080',
+        '새누리당': '#B8003C',
+        '자유한국당': '#B8003C',
+        '정의당': '#FFCC00',
+        '기타': '#999999'
+    };
+    
+    const startYear = selectedPeriod.start.getFullYear();
+    const endYear = selectedPeriod.end.getFullYear();
+    
+    let html = `
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="this.remove()">
+            <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto m-4" onclick="event.stopPropagation()">
+                <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 z-10">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold">${startYear}년 ~ ${endYear}년 지역 정치인</h2>
+                            <p class="text-sm opacity-90 mt-1">선택 기간에 재직한 모든 정치인 명단</p>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+    `;
+    
+    // 직위별로 표시 (국회의원 > 시의원 > 구의원 순)
+    const positionOrder = ['국회의원', '시의원', '구의원', '서울시장', '구청장'];
+    const positionNames = {
+        '국회의원': '🏛️ 국회의원',
+        '시의원': '🏢 시의원',
+        '구의원': '🏘️ 구의원',
+        '서울시장': '👔 서울시장',
+        '구청장': '👔 구청장'
+    };
+    
+    positionOrder.forEach(position => {
+        if (!byPosition[position]) return;
+        
+        html += `
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 pb-2 border-b-2 border-gray-200">${positionNames[position] || position}</h3>
+        `;
+        
+        byPosition[position].forEach(termData => {
+            html += `
+                <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-lg mb-3" style="color: ${termData.color};">${termData.label}</h4>
+                    <div class="space-y-3">
+            `;
+            
+            // 정당별로 정렬 (인원 많은 순)
+            const sortedParties = Object.entries(termData.byParty).sort((a, b) => b[1].length - a[1].length);
+            
+            sortedParties.forEach(([party, politicians]) => {
+                const partyColor = partyColors[party] || '#999999';
+                
+                html += `
+                    <div class="border-l-4 pl-4 py-2" style="border-color: ${partyColor};">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full" style="background-color: ${partyColor};"></div>
+                                <span class="font-bold">${party}</span>
+                                <span class="text-sm text-gray-600">${politicians.length}명</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                            ${politicians.map(p => `
+                                <div class="text-sm px-2 py-1 bg-white rounded border border-gray-200 hover:shadow-md transition-shadow">
+                                    <div class="font-medium">${p.name}</div>
+                                    ${p.district && p.district !== position ? `<div class="text-xs text-gray-500 truncate">${p.district}</div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div>`;
+    });
+    
+    html += `
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 팝업 추가
+    const popup = document.createElement('div');
+    popup.innerHTML = html;
+    document.body.appendChild(popup.firstElementChild);
+}
+window.showPeriodPoliticians = showPeriodPoliticians;
+
+// 이전 함수 제거 (미사용)
+function showPoliticianDetail_OLD(term) {
     // 정당별 그룹화
     const byParty = {};
     term.politicians.forEach(p => {
@@ -2422,34 +2589,17 @@ function drawPopulationChart() {
                 .slice(0, 2)
                 .map(p => p[0]);
             
-            // 배경 바 (직위 색상, 더 투명하게)
-            const termRect = svg.append('rect')
+            // 배경 바 (직위 색상, 반투명)
+            svg.append('rect')
                 .attr('x', startX)
                 .attr('y', yPos)
                 .attr('width', endX - startX)
                 .attr('height', barHeight)
                 .attr('fill', term.color)
-                .attr('opacity', 0.1)  // 투명도 증가 (0.2 → 0.1)
+                .attr('opacity', 0.15)
                 .attr('stroke', term.color)
-                .attr('stroke-width', 1)
-                .attr('stroke-opacity', 0.3)
-                .attr('rx', 3)
-                .style('cursor', 'pointer')
-                .on('mouseover', function() {
-                    d3.select(this)
-                        .attr('opacity', 0.25)
-                        .attr('stroke-width', 2)
-                        .attr('stroke-opacity', 0.6);
-                })
-                .on('mouseout', function() {
-                    d3.select(this)
-                        .attr('opacity', 0.1)
-                        .attr('stroke-width', 1)
-                        .attr('stroke-opacity', 0.3);
-                })
-                .on('click', function() {
-                    showPoliticianDetail(term);
-                });
+                .attr('stroke-width', 1.5)
+                .attr('rx', 3);
             
             // 임기 정보 텍스트 (간결하게)
             const barWidth = endX - startX;
@@ -2504,6 +2654,42 @@ function drawPopulationChart() {
         .style('font-size', '11px')
         .style('font-weight', '500')
         .text('인구');
+    
+    // 드래그 선택 기능 추가
+    const brush = d3.brushX()
+        .extent([[0, 0], [width, height]])
+        .on('end', function(event) {
+            if (!event.selection) {
+                // 선택 해제
+                window.selectedPeriod = null;
+                document.getElementById('periodInfo').classList.add('hidden');
+                return;
+            }
+            
+            const [x0, x1] = event.selection;
+            const startDate = x.invert(x0);
+            const endDate = x.invert(x1);
+            
+            // 선택된 기간 저장
+            window.selectedPeriod = {
+                start: startDate,
+                end: endDate
+            };
+            
+            // 기간 정보 표시
+            const startYear = startDate.getFullYear();
+            const endYear = endDate.getFullYear();
+            const startMonth = startDate.getMonth() + 1;
+            const endMonth = endDate.getMonth() + 1;
+            
+            document.getElementById('selectedPeriod').textContent = 
+                `${startYear}년 ${startMonth}월 ~ ${endYear}년 ${endMonth}월`;
+            document.getElementById('periodInfo').classList.remove('hidden');
+        });
+    
+    svg.append('g')
+        .attr('class', 'brush')
+        .call(brush);
     
     // 인터랙티브 영역 (보이지 않는 넓은 영역)
     svg.selectAll('.hover-area')
