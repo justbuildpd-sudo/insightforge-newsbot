@@ -411,7 +411,20 @@ def get_politicians(emdong_code):
     # 읍면동 코드에서 시군구 코드 추출
     sigungu_code = emdong_code[:5]  # 11230680 -> 11230
     
-    # 지방 정치인에서 찾기
+    # 구 이름 매핑 (시군구 코드 -> 구 이름)
+    gu_names = {
+        '11110': '종로구', '11140': '중구', '11170': '용산구', '11200': '성동구',
+        '11215': '광진구', '11230': '강남구', '11260': '동대문구', '11290': '중랑구',
+        '11305': '성북구', '11320': '강북구', '11350': '도봉구', '11380': '노원구',
+        '11410': '은평구', '11440': '서대문구', '11470': '마포구', '11500': '양천구',
+        '11530': '강서구', '11545': '구로구', '11560': '금천구', '11590': '영등포구',
+        '11620': '동작구', '11650': '관악구', '11680': '서초구', '11710': '송파구',
+        '11740': '강동구'
+    }
+    
+    gu_name = gu_names.get(sigungu_code)
+    
+    # 지방 정치인에서 서울시장/구청장 찾기
     for name, pol_data in local_data.items():
         if 'politician_info' in pol_data:
             info = pol_data['politician_info']
@@ -423,39 +436,36 @@ def get_politicians(emdong_code):
                     'party': info.get('party', ''),
                     'district': info.get('district', '')
                 })
-            # 구청장
-            elif info.get('position') == '구청장' and info.get('district', '').find(emdong_code[:5]) >= 0:
-                politicians.append({
-                    'name': name,
-                    'position': '구청장',
-                    'party': info.get('party', ''),
-                    'district': info.get('district', '')
-                })
+            # 구청장 (구 이름으로 매칭)
+            elif info.get('position') == '구청장':
+                pol_district = info.get('district', '')
+                if gu_name and gu_name in pol_district:
+                    politicians.append({
+                        'name': name,
+                        'position': '구청장',
+                        'party': info.get('party', ''),
+                        'district': pol_district
+                    })
     
-    # 시의원 찾기
-    for si_list in (si_uiwon if isinstance(si_uiwon, list) else [si_uiwon]):
-        for pol in (si_list if isinstance(si_list, list) else [si_list]):
-            # district로 매칭 (예: "강남구제1선거구")
-            district = pol.get('district', '')
-            if sigungu_code == '11230' and district.startswith('강남구'):
-                politicians.append({
-                    'name': pol.get('name', '').split('\n')[0],
-                    'position': '시의원',
-                    'party': pol.get('party', ''),
-                    'district': district
-                })
+    # 시의원 찾기 (dict 구조)
+    if gu_name and isinstance(si_uiwon, dict) and gu_name in si_uiwon:
+        for pol in si_uiwon[gu_name]:
+            politicians.append({
+                'name': pol.get('name', '').split('\n')[0],
+                'position': '시의원',
+                'party': pol.get('party', ''),
+                'district': pol.get('district', '')
+            })
     
-    # 구의원 찾기
-    for gu_list in (gu_uiwon if isinstance(gu_uiwon, list) else [gu_uiwon]):
-        for pol in (gu_list if isinstance(gu_list, list) else [gu_list]):
-            district = pol.get('district', '')
-            if sigungu_code == '11230' and district.startswith('강남구'):
-                politicians.append({
-                    'name': pol.get('name', '').split('\n')[0],
-                    'position': '구의원',
-                    'party': pol.get('party', ''),
-                    'district': district
-                })
+    # 구의원 찾기 (dict 구조)
+    if gu_name and isinstance(gu_uiwon, dict) and gu_name in gu_uiwon:
+        for pol in gu_uiwon[gu_name]:
+            politicians.append({
+                'name': pol.get('name', '').split('\n')[0],
+                'position': '구의원',
+                'party': pol.get('party', ''),
+                'district': pol.get('district', '')
+            })
     
     return jsonify(politicians)
 
