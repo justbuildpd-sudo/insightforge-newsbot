@@ -450,16 +450,63 @@ def get_available_years():
 @app.route('/api/politicians/emdong/<emdong_code>')
 def get_politicians(emdong_code):
     """읍면동의 정치인 정보"""
-    # 국회의원 데이터
-    assembly_data = load_json_file('assembly_by_region.json')
-    
     # 지방 정치인 데이터
-    local_data = load_json_file('local_politicians_lda_analysis.json')
+    local_data = load_json_file('local_politicians_lda_analysis.json') or {}
+    
+    # 시의원, 구의원 데이터
+    si_uiwon = load_json_file('seoul_si_uiwon_8th_real.json') or []
+    gu_uiwon = load_json_file('seoul_gu_uiwon_8th_real.json') or []
     
     politicians = []
     
-    # 데이터 구조에 맞게 정치인 추출
-    # (실제 데이터 구조에 맞게 수정 필요)
+    # 읍면동 코드에서 시군구 코드 추출
+    sigungu_code = emdong_code[:5]  # 11230680 -> 11230
+    
+    # 지방 정치인에서 찾기
+    for name, pol_data in local_data.items():
+        if 'politician_info' in pol_data:
+            info = pol_data['politician_info']
+            # 오세훈 (서울시장)
+            if info.get('position') == '시장' and sigungu_code.startswith('11'):
+                politicians.append({
+                    'name': name,
+                    'position': '서울시장',
+                    'party': info.get('party', ''),
+                    'district': info.get('district', '')
+                })
+            # 구청장
+            elif info.get('position') == '구청장' and info.get('district', '').find(emdong_code[:5]) >= 0:
+                politicians.append({
+                    'name': name,
+                    'position': '구청장',
+                    'party': info.get('party', ''),
+                    'district': info.get('district', '')
+                })
+    
+    # 시의원 찾기
+    for si_list in (si_uiwon if isinstance(si_uiwon, list) else [si_uiwon]):
+        for pol in (si_list if isinstance(si_list, list) else [si_list]):
+            # district로 매칭 (예: "강남구제1선거구")
+            district = pol.get('district', '')
+            if sigungu_code == '11230' and district.startswith('강남구'):
+                politicians.append({
+                    'name': pol.get('name', '').split('\n')[0],
+                    'position': '시의원',
+                    'party': pol.get('party', ''),
+                    'district': district
+                })
+    
+    # 구의원 찾기
+    for gu_list in (gu_uiwon if isinstance(gu_uiwon, list) else [gu_uiwon]):
+        for pol in (gu_list if isinstance(gu_list, list) else [gu_list]):
+            district = pol.get('district', '')
+            if sigungu_code == '11230' and district.startswith('강남구'):
+                politicians.append({
+                    'name': pol.get('name', '').split('\n')[0],
+                    'position': '구의원',
+                    'party': pol.get('party', ''),
+                    'district': district
+                })
     
     return jsonify(politicians)
 
