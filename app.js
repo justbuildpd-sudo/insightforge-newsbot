@@ -973,7 +973,7 @@ function renderSigunguDetail(data) {
     // 새로운 데이터 구조 사용
     const household = data.household || {};
     const company = data.company || {};
-    const housing = data.housing || {};
+    const housing = data.house || {};  // 백엔드는 'house' 키 사용
     
     // 총 인구 계산
     const totalPopulation = (household.male_population || 0) + (household.female_population || 0);
