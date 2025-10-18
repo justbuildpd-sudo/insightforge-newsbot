@@ -336,10 +336,7 @@ async function selectEmdong(emdongCode) {
         
         renderEmdongDetail(data);
         
-        // 시계열 그래프 렌더링 (정치인 데이터 전달)
-        loadEmdongTimeseries(emdongCode, data.politicians);
-        
-        // 시계열 데이터도 가져오기 (있는 경우)
+        // 시계열 데이터 가져오기 (있는 경우)
         loadTimeseriesData(emdongCode);
         
     } catch (error) {
@@ -2382,114 +2379,6 @@ function showPeriodPoliticians() {
     document.body.appendChild(popup.firstElementChild);
 }
 window.showPeriodPoliticians = showPeriodPoliticians;
-
-// 이전 함수 제거 (미사용)
-function showPoliticianDetail_OLD(term) {
-    // 정당별 그룹화
-    const byParty = {};
-    term.politicians.forEach(p => {
-        const party = p.party || '무소속';
-        if (!byParty[party]) byParty[party] = [];
-        byParty[party].push(p);
-    });
-    
-    // 정당별 색상
-    const partyColors = {
-        '국민의힘': '#E61E2B',
-        '더불어민주당': '#1E90FF',
-        '민주당': '#1E90FF',
-        '조국혁신당': '#FF6B9D',
-        '개혁신당': '#00A0E9',
-        '진보당': '#EA5504',
-        '무소속': '#808080',
-        '새누리당': '#B8003C',
-        '자유한국당': '#B8003C',
-        '정의당': '#FFCC00',
-        '기타': '#999999'
-    };
-    
-    const startYear = term.startDate.getFullYear();
-    const endYear = term.endDate.getFullYear();
-    
-    let html = `
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="this.remove()">
-            <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-y-auto m-4" onclick="event.stopPropagation()">
-                <div class="sticky top-0 bg-gradient-to-r from-${term.position === '국회의원' ? 'blue' : term.position === '시의원' ? 'green' : 'purple'}-600 to-${term.position === '국회의원' ? 'blue' : term.position === '시의원' ? 'green' : 'purple'}-700 text-white p-6">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h2 class="text-2xl font-bold">${term.label}</h2>
-                            <p class="text-sm opacity-90 mt-1">${startYear}년 ~ ${endYear}년 (${endYear - startYear}년간)</p>
-                        </div>
-                        <button onclick="this.closest('.fixed').remove()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="p-6">
-                    <!-- 요약 정보 -->
-                    <div class="grid grid-cols-3 gap-4 mb-6">
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <div class="text-sm text-gray-600">총 인원</div>
-                            <div class="text-2xl font-bold text-blue-600">${term.politicians.length}명</div>
-                        </div>
-                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                            <div class="text-sm text-gray-600">정당 수</div>
-                            <div class="text-2xl font-bold text-green-600">${Object.keys(byParty).length}개</div>
-                        </div>
-                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                            <div class="text-sm text-gray-600">직위</div>
-                            <div class="text-2xl font-bold text-purple-600">${term.position}</div>
-                        </div>
-                    </div>
-                    
-                    <!-- 정당별 목록 -->
-                    <h3 class="font-bold text-lg mb-4">정당별 명단</h3>
-                    <div class="space-y-4">
-    `;
-    
-    // 정당별로 정렬 (인원 많은 순)
-    const sortedParties = Object.entries(byParty).sort((a, b) => b[1].length - a[1].length);
-    
-    sortedParties.forEach(([party, politicians]) => {
-        const partyColor = partyColors[party] || '#999999';
-        
-        html += `
-            <div class="border rounded-lg p-4" style="border-color: ${partyColor};">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 rounded-full mr-2" style="background-color: ${partyColor};"></div>
-                        <span class="font-bold text-lg">${party}</span>
-                    </div>
-                    <span class="text-sm text-gray-600">${politicians.length}명</span>
-                </div>
-                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                    ${politicians.map(p => `
-                        <div class="text-sm px-2 py-1 bg-gray-50 rounded border border-gray-200">
-                            <span class="font-medium">${p.name}</span>
-                            ${p.district && p.district !== term.position ? `<div class="text-xs text-gray-500 truncate">${p.district}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    });
-    
-    html += `
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // 팝업 추가
-    const popup = document.createElement('div');
-    popup.innerHTML = html;
-    document.body.appendChild(popup.firstElementChild);
-}
-window.showPoliticianDetail = showPoliticianDetail;
 
 function drawPopulationChart() {
     const {width, height, margin} = window.currentChartSize;
