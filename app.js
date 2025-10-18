@@ -226,7 +226,21 @@ async function toggleSigungu(sigunguCode) {
 }
 
 async function selectSigungu(sigunguCode) {
-    // 시군구 클릭 시 읍면동 목록 확장
+    console.log('🔍 시군구 선택:', sigunguCode);
+    
+    // 시군구 상세 정보 로드
+    try {
+        const response = await fetch(`${API_BASE}/api/national/sigungu/${sigunguCode}/detail`);
+        const data = await response.json();
+        
+        console.log('📦 시군구 상세 데이터:', data);
+        renderSigunguDetail(data);
+        
+    } catch (error) {
+        console.error('❌ 시군구 상세 정보 로드 실패:', error);
+    }
+    
+    // 읍면동 목록도 확장
     if (!expandedSigungus.has(sigunguCode)) {
         await toggleSigungu(sigunguCode);
     }
@@ -950,18 +964,6 @@ function renderLineChart(title, values, years, unit, color) {
             </svg>
         </div>
     `;
-}
-
-async function selectSigungu(sigunguCode) {
-    try {
-        const response = await fetch(`${API_BASE}/api/national/sigungu/${sigunguCode}/detail`);
-        const data = await response.json();
-        
-        renderSigunguDetail(data);
-        
-    } catch (error) {
-        console.error('❌ 시군구 상세 정보 로드 실패:', error);
-    }
 }
 
 function renderSigunguDetail(data) {
