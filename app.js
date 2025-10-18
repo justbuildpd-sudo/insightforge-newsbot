@@ -1173,9 +1173,25 @@ function renderEmdongDetail(emdong) {
     const house = emdong.house || {};
     const company = emdong.company || {};
     
-    console.log('📊 가구:', household);
-    console.log('🏢 사업체:', company);
-    console.log('🏠 주택:', house);
+    // SGIS 데이터는 100 단위로 저장되어 있음 (127 = 12,700가구)
+    const household_real = {
+        household_cnt: (household.household_cnt || 0) * 100,
+        family_member_cnt: (household.family_member_cnt || 0) * 100,
+        avg_family_member_cnt: household.avg_family_member_cnt || 0
+    };
+    
+    const house_real = {
+        house_cnt: (house.house_cnt || 0) * 100
+    };
+    
+    const company_real = {
+        corp_cnt: (company.corp_cnt || 0) * 100,
+        tot_worker: (company.tot_worker || 0) * 100
+    };
+    
+    console.log('📊 가구 (실제):', household_real);
+    console.log('🏢 사업체 (실제):', company_real);
+    console.log('🏠 주택 (실제):', house_real);
     
     detailView.innerHTML = `
         <div class="max-w-5xl">
@@ -1195,25 +1211,25 @@ function renderEmdongDetail(emdong) {
             <div id="mainStatsCards" class="grid grid-cols-4 gap-4 mb-6">
                 <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl shadow-lg text-white">
                     <div class="text-xs opacity-90 mb-1">인구 (${selectedYear}년)</div>
-                    <div class="text-2xl font-bold mb-1">${household.family_member_cnt ? household.family_member_cnt.toLocaleString() : 0}<span class="text-sm ml-1">명</span></div>
+                    <div class="text-2xl font-bold mb-1">${household_real.family_member_cnt.toLocaleString()}<span class="text-sm ml-1">명</span></div>
                     <div class="h-12 mb-1" id="miniChart-population" style="min-height: 48px;"></div>
                 </div>
                 
                 <div class="bg-gradient-to-br from-green-500 to-green-600 p-4 rounded-xl shadow-lg text-white">
                     <div class="text-xs opacity-90 mb-1">가구수 (${selectedYear}년)</div>
-                    <div class="text-2xl font-bold mb-1">${household.household_cnt ? household.household_cnt.toLocaleString() : 0}<span class="text-sm ml-1">가구</span></div>
+                    <div class="text-2xl font-bold mb-1">${household_real.household_cnt.toLocaleString()}<span class="text-sm ml-1">가구</span></div>
                     <div class="h-12 mb-1" id="miniChart-household" style="min-height: 48px;"></div>
                 </div>
                 
                 <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-xl shadow-lg text-white">
                     <div class="text-xs opacity-90 mb-1">주택수 (${selectedYear}년)</div>
-                    <div class="text-2xl font-bold mb-1">${house.house_cnt ? house.house_cnt.toLocaleString() : 0}<span class="text-sm ml-1">호</span></div>
+                    <div class="text-2xl font-bold mb-1">${house_real.house_cnt.toLocaleString()}<span class="text-sm ml-1">호</span></div>
                     <div class="h-12 mb-1" id="miniChart-house" style="min-height: 48px;"></div>
                 </div>
                 
                 <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-4 rounded-xl shadow-lg text-white">
                     <div class="text-xs opacity-90 mb-1">사업체 (${selectedYear}년)</div>
-                    <div class="text-2xl font-bold mb-1">${company.corp_cnt ? company.corp_cnt.toLocaleString() : 0}<span class="text-sm ml-1">개</span></div>
+                    <div class="text-2xl font-bold mb-1">${company_real.corp_cnt.toLocaleString()}<span class="text-sm ml-1">개</span></div>
                     <div class="h-12 mb-1" id="miniChart-company" style="min-height: 48px;"></div>
                 </div>
             </div>
@@ -1231,15 +1247,15 @@ function renderEmdongDetail(emdong) {
                     <div class="space-y-3">
                         <div class="flex justify-between items-center py-2 border-b border-gray-100">
                             <span class="text-gray-700">총 가구수</span>
-                            <span class="font-semibold">${household.household_cnt ? household.household_cnt.toLocaleString() : 0}가구</span>
+                            <span class="font-semibold">${household_real.household_cnt.toLocaleString()}가구</span>
                         </div>
                         <div class="flex justify-between items-center py-2 border-b border-gray-100">
                             <span class="text-gray-700">총 인구</span>
-                            <span class="font-semibold">${household.family_member_cnt ? household.family_member_cnt.toLocaleString() : 0}명</span>
+                            <span class="font-semibold">${household_real.family_member_cnt.toLocaleString()}명</span>
                         </div>
                         <div class="flex justify-between items-center py-2">
                             <span class="text-gray-700">평균 가구원수</span>
-                            <span class="font-semibold text-blue-600">${household.avg_family_member_cnt ? household.avg_family_member_cnt.toFixed(1) : 0}명</span>
+                            <span class="font-semibold text-blue-600">${household_real.avg_family_member_cnt.toFixed(1)}명</span>
                         </div>
                     </div>
                 </div>
@@ -1255,15 +1271,15 @@ function renderEmdongDetail(emdong) {
                     <div class="space-y-3">
                         <div class="flex justify-between items-center py-2 border-b border-gray-100">
                             <span class="text-gray-700">사업체수</span>
-                            <span class="font-semibold">${company.corp_cnt ? company.corp_cnt.toLocaleString() : 0}개</span>
+                            <span class="font-semibold">${company_real.corp_cnt.toLocaleString()}개</span>
                         </div>
                         <div class="flex justify-between items-center py-2 border-b border-gray-100">
                             <span class="text-gray-700">종사자수</span>
-                            <span class="font-semibold">${company.tot_worker ? company.tot_worker.toLocaleString() : 0}명</span>
+                            <span class="font-semibold">${company_real.tot_worker.toLocaleString()}명</span>
                         </div>
                         <div class="flex justify-between items-center py-2">
                             <span class="text-gray-700">평균 종사자수</span>
-                            <span class="font-semibold text-orange-600">${company.corp_cnt && company.tot_worker ? (company.tot_worker / company.corp_cnt).toFixed(1) : 0}명/사업체</span>
+                            <span class="font-semibold text-orange-600">${company_real.corp_cnt ? (company_real.tot_worker / company_real.corp_cnt).toFixed(1) : 0}명/사업체</span>
                         </div>
                     </div>
                 </div>
