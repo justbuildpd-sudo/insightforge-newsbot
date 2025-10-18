@@ -965,21 +965,32 @@ async function selectSigungu(sigunguCode) {
 }
 
 function renderSigunguDetail(data) {
+    console.log('🎨 renderSigunguDetail 호출됨');
+    console.log('📦 받은 데이터:', data);
+    
     const detailView = document.getElementById('detailView');
     
-    const commercial = data.commercial || {};
-    const tech = data.tech || {};
-    const ageData = commercial.population_by_age || {};
-    const genderData = commercial.gender || {};
-    const houseType = commercial.house_type || {};
-    const regionSummary = commercial.region_summary || {};
-    const techCategories = tech.tech_categories || {};
+    // 새로운 데이터 구조 사용
+    const household = data.household || {};
+    const company = data.company || {};
+    const housing = data.housing || {};
+    
+    // 총 인구 계산
+    const totalPopulation = (household.male_population || 0) + (household.female_population || 0);
+    const maleRatio = totalPopulation > 0 ? ((household.male_population || 0) / totalPopulation * 100) : 0;
+    
+    console.log('📊 계산된 값:', {
+        totalPopulation,
+        maleRatio,
+        household_cnt: household.household_cnt,
+        house_cnt: housing.house_cnt
+    });
     
     detailView.innerHTML = `
         <div class="max-w-5xl">
             <!-- 헤더 -->
             <div class="mb-6">
-                <h2 class="text-3xl font-bold text-gray-900">${commercial.sido_name || ''} ${commercial.sigungu_name || ''}</h2>
+                <h2 class="text-3xl font-bold text-gray-900">${data.full_address || ''}</h2>
                 <p class="text-gray-600 mt-1">시군구 코드: ${data.sigungu_code}</p>
             </div>
             
@@ -987,176 +998,69 @@ function renderSigunguDetail(data) {
             <div class="grid grid-cols-4 gap-4 mb-6">
                 <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
                     <div class="text-sm opacity-90 mb-1">총 인구</div>
-                    <div class="text-3xl font-bold">${genderData.total_population ? genderData.total_population.toLocaleString() : '-'}</div>
+                    <div class="text-3xl font-bold">${totalPopulation ? totalPopulation.toLocaleString() : '-'}</div>
                     <div class="text-xs opacity-75 mt-1">명</div>
                 </div>
                 
                 <div class="bg-gradient-to-br from-pink-500 to-pink-600 p-6 rounded-xl shadow-lg text-white">
                     <div class="text-sm opacity-90 mb-1">성비</div>
-                    <div class="text-3xl font-bold">${genderData.male_per ? genderData.male_per.toFixed(1) : '-'}%</div>
+                    <div class="text-3xl font-bold">${maleRatio ? maleRatio.toFixed(1) : '-'}%</div>
                     <div class="text-xs opacity-75 mt-1">남성 비율</div>
                 </div>
                 
                 <div class="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-lg text-white">
-                    <div class="text-sm opacity-90 mb-1">아파트 비율</div>
-                    <div class="text-3xl font-bold">${houseType.apartment_per ? houseType.apartment_per.toFixed(1) : '-'}%</div>
-                    <div class="text-xs opacity-75 mt-1">${houseType.apartment_cnt ? houseType.apartment_cnt.toLocaleString() : 0}가구</div>
+                    <div class="text-sm opacity-90 mb-1">총 세대수</div>
+                    <div class="text-3xl font-bold">${household.household_cnt ? household.household_cnt.toLocaleString() : '-'}</div>
+                    <div class="text-xs opacity-75 mt-1">가구</div>
                 </div>
                 
                 <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-xl shadow-lg text-white">
-                    <div class="text-sm opacity-90 mb-1">65세 이상</div>
-                    <div class="text-3xl font-bold">${regionSummary.senior_65_plus_per ? regionSummary.senior_65_plus_per.toFixed(1) : '-'}%</div>
-                    <div class="text-xs opacity-75 mt-1">고령 인구</div>
+                    <div class="text-sm opacity-90 mb-1">총 주택수</div>
+                    <div class="text-3xl font-bold">${housing.house_cnt ? housing.house_cnt.toLocaleString() : '-'}</div>
+                    <div class="text-xs opacity-75 mt-1">호</div>
                 </div>
             </div>
             
-            <!-- 연령대별 인구 -->
+            <!-- 추가 정보 -->
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-6">
                 <h3 class="font-bold text-lg mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
-                    연령대별 인구 분포
-                </h3>
-                <div class="grid grid-cols-4 gap-4">
-                    ${renderAgeBar('10대 미만', ageData.under_10_per, ageData.under_10_cnt, 'blue')}
-                    ${renderAgeBar('10대', ageData.teen_per, ageData.teen_cnt, 'indigo')}
-                    ${renderAgeBar('20대', ageData.twenty_per, ageData.twenty_cnt, 'purple')}
-                    ${renderAgeBar('30대', ageData.thirty_per, ageData.thirty_cnt, 'pink')}
-                    ${renderAgeBar('40대', ageData.forty_per, ageData.forty_cnt, 'red')}
-                    ${renderAgeBar('50대', ageData.fifty_per, ageData.fifty_cnt, 'orange')}
-                    ${renderAgeBar('60대', ageData.sixty_per, ageData.sixty_cnt, 'yellow')}
-                    ${renderAgeBar('70대+', ageData.seventy_plus_per, ageData.seventy_plus_cnt, 'green')}
-                </div>
-            </div>
-            
-            <!-- 주택 유형 -->
-            <div class="grid grid-cols-2 gap-6 mb-6">
-                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                    <h3 class="font-bold text-lg mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                        주택 유형 분포
-                    </h3>
-                    <div class="space-y-3">
-                        ${renderHouseTypeBar('아파트', houseType.apartment_per, houseType.apartment_cnt, 'blue')}
-                        ${renderHouseTypeBar('단독주택', houseType.detached_per, houseType.detached_cnt, 'green')}
-                        ${renderHouseTypeBar('연립/다세대', houseType.row_house_per, houseType.row_house_cnt, 'purple')}
-                        ${renderHouseTypeBar('오피스텔', houseType.officetel_per, houseType.officetel_cnt, 'orange')}
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                    <h3 class="font-bold text-lg mb-4 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        지역 특성
-                    </h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between py-2 border-b border-gray-100">
-                            <span class="text-gray-700">1인 가구 비율</span>
-                            <span class="font-semibold text-blue-600">${regionSummary.one_person_family_per ? regionSummary.one_person_family_per.toFixed(1) : '-'}%</span>
-                        </div>
-                        <div class="flex justify-between py-2 border-b border-gray-100">
-                            <span class="text-gray-700">20대 인구 비율</span>
-                            <span class="font-semibold text-purple-600">${regionSummary.twenty_age_per ? regionSummary.twenty_age_per.toFixed(1) : '-'}%</span>
-                        </div>
-                        <div class="flex justify-between py-2">
-                            <span class="text-gray-700">거주인구 비율</span>
-                            <span class="font-semibold">${regionSummary.resident_population_per ? regionSummary.resident_population_per.toFixed(1) : '-'}%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 기술업종 분포 -->
-            ${Object.keys(techCategories).length > 0 ? `
-            <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-6">
-                <h3 class="font-bold text-lg mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                    </svg>
-                    기술업종 분포
+                    상세 정보
                 </h3>
                 <div class="grid grid-cols-2 gap-4">
-                    ${Object.entries(techCategories).map(([code, tech]) => `
-                        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="font-semibold text-indigo-900">${tech.name}</span>
-                                <span class="text-sm text-indigo-600">${tech.corp_per ? tech.corp_per.toFixed(1) : 0}%</span>
-                            </div>
-                            <div class="flex justify-between items-center text-sm">
-                                <span class="text-gray-600">사업체수:</span>
-                                <span class="font-semibold">${tech.corp_cnt ? tech.corp_cnt.toLocaleString() : 0}개</span>
-                            </div>
-                            ${tech.corp_growth_rate ? `
-                            <div class="flex justify-between items-center text-xs mt-1">
-                                <span class="text-gray-500">증감률:</span>
-                                <span class="font-semibold ${tech.corp_growth_rate > 0 ? 'text-green-600' : 'text-red-600'}">
-                                    ${tech.corp_growth_rate > 0 ? '+' : ''}${tech.corp_growth_rate.toFixed(1)}%
-                                </span>
-                            </div>
-                            ` : ''}
-                        </div>
-                    `).join('')}
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div class="text-sm text-gray-600 mb-1">남성 인구</div>
+                        <div class="text-2xl font-bold text-blue-600">${household.male_population ? household.male_population.toLocaleString() : '-'}</div>
+                        <div class="text-xs text-gray-500">명</div>
+                    </div>
+                    <div class="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                        <div class="text-sm text-gray-600 mb-1">여성 인구</div>
+                        <div class="text-2xl font-bold text-pink-600">${household.female_population ? household.female_population.toLocaleString() : '-'}</div>
+                        <div class="text-xs text-gray-500">명</div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div class="text-sm text-gray-600 mb-1">사업체 수</div>
+                        <div class="text-2xl font-bold text-green-600">${company.corp_cnt ? company.corp_cnt.toLocaleString() : '-'}</div>
+                        <div class="text-xs text-gray-500">개</div>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                        <div class="text-sm text-gray-600 mb-1">종사자 수</div>
+                        <div class="text-2xl font-bold text-orange-600">${company.tot_worker ? company.tot_worker.toLocaleString() : '-'}</div>
+                        <div class="text-xs text-gray-500">명</div>
+                    </div>
                 </div>
             </div>
-            ` : ''}
             
-            <!-- 업종 분포 (상위 10개) -->
-            ${commercial.business_distribution && commercial.business_distribution.length > 0 ? `
-            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <h3 class="font-bold text-lg mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                    주요 업종 분포 (TOP 10)
-                </h3>
-                <div class="grid grid-cols-2 gap-3">
-                    ${commercial.business_distribution.slice(0, 10).map((biz, idx) => `
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold text-gray-500">${idx + 1}</span>
-                                <span class="text-sm font-semibold">${biz.s_theme_cd_nm || biz.theme_nm || '-'}</span>
-                            </div>
-                            <span class="text-sm text-orange-600 font-bold">${biz.dist_per || 0}%</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-        </div>
-    `;
-}
-
-function renderAgeBar(label, percent, count, color) {
-    if (!percent) return '';
-    return `
-        <div class="bg-${color}-50 p-3 rounded-lg border border-${color}-200">
-            <div class="text-xs text-gray-600 mb-1">${label}</div>
-            <div class="text-xl font-bold text-${color}-600">${percent.toFixed(1)}%</div>
-            <div class="text-xs text-gray-500">${count ? count.toLocaleString() : 0}명</div>
-        </div>
-    `;
-}
-
-function renderHouseTypeBar(label, percent, count, color) {
-    if (!percent) return '';
-    return `
-        <div class="flex items-center justify-between py-2 border-b border-gray-100">
-            <span class="text-gray-700">${label}</span>
-            <div class="flex items-center gap-2">
-                <div class="w-32 bg-gray-200 rounded-full h-2">
-                    <div class="bg-${color}-600 h-2 rounded-full" style="width: ${percent}%"></div>
-                </div>
-                <span class="font-semibold text-sm">${percent.toFixed(1)}%</span>
-                <span class="text-xs text-gray-500">${count ? count.toLocaleString() : 0}</span>
+            <!-- 데이터 출처 -->
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-600">
+                📊 데이터 출처: ${data.data_source || '주민등록 2025-09 (인구/가구 합산)'} | 사업체/주택: SGIS 2023 (집계)
             </div>
         </div>
     `;
 }
+
 
 function renderEmdongDetail(emdong) {
     console.log('🎨 renderEmdongDetail 호출됨');
