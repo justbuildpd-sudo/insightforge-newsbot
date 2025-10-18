@@ -255,7 +255,7 @@ def get_regions():
 
 @app.route('/api/emdong/<emdong_code>/timeseries')
 def get_emdong_timeseries(emdong_code):
-    """읍면동 시계열 데이터 (월별 인구 변화)"""
+    """읍면동 시계열 데이터 (월별 인구 + 연도별 사업체/주택)"""
     # 코드 매핑
     code_mapping = load_json_file('code_mapping.json') or {}
     mapping_dict = code_mapping.get('mapping', {})
@@ -269,6 +269,12 @@ def get_emdong_timeseries(emdong_code):
     growth_info = {}
     if jumin_code and 'regions' in growth_data and jumin_code in growth_data['regions']:
         growth_info = growth_data['regions'][jumin_code].get('data', {})
+    
+    # 멀티year SGIS 데이터
+    multiyear_data = load_json_file('sgis_enhanced_multiyear_stats.json') or {}
+    yearly_stats = {}
+    if emdong_code in multiyear_data and 'years' in multiyear_data[emdong_code]:
+        yearly_stats = multiyear_data[emdong_code]['years']
     
     # 월별 데이터 추출
     monthly_data = []
@@ -291,10 +297,25 @@ def get_emdong_timeseries(emdong_code):
     # 날짜순 정렬
     monthly_data.sort(key=lambda x: (x['year'], x['month']))
     
+    # 연도별 사업체/주택 데이터 추가
+    yearly_business = []
+    for year_str, stats in yearly_stats.items():
+        company = stats.get('company', {})
+        house = stats.get('house', {})
+        yearly_business.append({
+            'year': int(year_str),
+            'company_cnt': company.get('corp_cnt', 0),
+            'worker_cnt': company.get('tot_worker', 0),
+            'house_cnt': house.get('house_cnt', 0)
+        })
+    
+    yearly_business.sort(key=lambda x: x['year'])
+    
     return jsonify({
         'emdong_code': emdong_code,
         'jumin_code': jumin_code,
-        'timeseries': monthly_data
+        'timeseries': monthly_data,
+        'yearly_business': yearly_business
     })
 
 @app.route('/api/sigungu/<sigungu_code>/timeseries')

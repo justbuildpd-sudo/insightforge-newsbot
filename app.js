@@ -2014,24 +2014,37 @@ async function loadAndRenderTimeseries(emdongCode, politicians) {
             return;
         }
         
-        renderTimeseriesChart(data.timeseries, politicians);
+        // 인구 + 사업체/주택 데이터 모두 전달
+        renderTimeseriesChart(data.timeseries, politicians, data.yearly_business);
         
     } catch (error) {
         console.error('시계열 데이터 로드 실패:', error);
     }
 }
 
-function renderTimeseriesChart(timeseriesData, politicians) {
+function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
     const container = document.getElementById('timeseriesChart');
     if (!container) return;
     
-    // 컨테이너 초기화
-    container.innerHTML = '';
+    // 컨테이너 초기화 및 지표 선택 버튼 추가
+    container.innerHTML = `
+        <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-lg">시계열 분석</h3>
+                <div class="flex gap-2">
+                    <button onclick="switchMetric('population')" id="btn-population" class="px-3 py-1 text-xs rounded bg-blue-600 text-white">인구</button>
+                    <button onclick="switchMetric('business')" id="btn-business" class="px-3 py-1 text-xs rounded bg-gray-200 text-gray-700">사업체</button>
+                    <button onclick="switchMetric('housing')" id="btn-housing" class="px-3 py-1 text-xs rounded bg-gray-200 text-gray-700">주택</button>
+                </div>
+            </div>
+            <div id="chartContainer"></div>
+        </div>
+    `;
     
     // 차트 크기 (너비 넓게, 높이 낮게)
     const margin = {top: 30, right: 100, bottom: 50, left: 70};
-    const width = container.clientWidth - margin.left - margin.right;
-    const height = 250 - margin.top - margin.bottom;
+    const width = container.clientWidth - margin.left - margin.right - 40;
+    const height = 220 - margin.top - margin.bottom;
     
     // 정치인 임기 정보 (제8회 지방선거: 2022-07-01 ~ 2026-06-30)
     const politicianTerms = politicians && politicians.length > 0 ? [{
@@ -2041,8 +2054,33 @@ function renderTimeseriesChart(timeseriesData, politicians) {
         label: '제8회 지방선거 임기'
     }] : [];
     
+    // 현재 데이터 저장 (지표 전환용)
+    window.currentTimeseriesData = timeseriesData;
+    window.currentYearlyBusiness = yearlyBusiness;
+    window.currentPoliticians = politicians;
+    window.currentChartSize = {width, height, margin};
+    
+    // 인구 그래프 먼저 그리기
+    drawPopulationChart();
+}
+
+function drawPopulationChart() {
+    const {width, height, margin} = window.currentChartSize;
+    const timeseriesData = window.currentTimeseriesData;
+    const politicians = window.currentPoliticians;
+    
+    const politicianTerms = politicians && politicians.length > 0 ? [{
+        startDate: new Date('2022-07-01'),
+        endDate: new Date('2026-06-30'),
+        politicians: politicians,
+        label: '제8회 지방선거 임기'
+    }] : [];
+    
+    // 컨테이너 초기화
+    d3.select('#chartContainer').html('');
+    
     // SVG 생성
-    const svg = d3.select('#timeseriesChart')
+    const svg = d3.select('#chartContainer')
         .append('svg')
         .attr('width', width + margin.left + margin.right)
         .attr('height', height + margin.top + margin.bottom)
