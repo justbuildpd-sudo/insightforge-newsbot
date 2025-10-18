@@ -141,11 +141,11 @@ def get_sigungu_detail_with_stats(sigungu_code):
             'female_population': total_female
         },
         'house': {
-            'house_cnt': total_house * 100  # SGIS는 100배 필요
+            'house_cnt': total_house  # 실제 값 사용
         },
         'company': {
-            'corp_cnt': total_company * 100,
-            'tot_worker': total_worker * 100
+            'corp_cnt': total_company,
+            'tot_worker': total_worker  # 실제 값 사용
         },
         'data_source': '주민등록 2025-09 (인구/가구 합산)',
         'data_year': '2025-09',
