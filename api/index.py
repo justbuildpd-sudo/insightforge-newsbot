@@ -152,11 +152,23 @@ def get_emdong_enhanced(emdong_code):
     if 'regions' in comprehensive_stats and emdong_code in comprehensive_stats['regions']:
         emdong_stats = comprehensive_stats['regions'][emdong_code]
     
+    # 코드 매핑으로 주민등록 코드 찾기
+    code_mapping = load_json_file('code_mapping.json') or {}
+    jumin_code = None
+    if 'mapping' in code_mapping and emdong_code in code_mapping['mapping']:
+        jumin_code = code_mapping['mapping'][emdong_code]['jumin_code']
+    
     # 주민등록 인구 데이터 (가장 정확)
     jumin_data = load_json_file('jumin_population_2025.json') or {}
     jumin_info = {}
-    if 'regions' in jumin_data and emdong_code in jumin_data['regions']:
-        jumin_info = jumin_data['regions'][emdong_code]
+    if jumin_code and 'regions' in jumin_data and jumin_code in jumin_data['regions']:
+        jumin_info = jumin_data['regions'][jumin_code]
+        
+    # 인구증감 데이터
+    growth_data = load_json_file('jumin_growth_2025.json') or {}
+    growth_info = {}
+    if jumin_code and 'regions' in growth_data and jumin_code in growth_data['regions']:
+        growth_info = growth_data['regions'][jumin_code]
     
     # 멀티 year 통계 데이터
     multiyear_data = load_json_file('sgis_enhanced_multiyear_stats.json') or {}
@@ -182,6 +194,18 @@ def get_emdong_enhanced(emdong_code):
             'female_population': jumin_info.get('female_population', 0)
         }
         result['data_source'] = '주민등록 2025-09'
+        result['data_year'] = '2025-09'
+    
+    # 인구증감 데이터 추가
+    if growth_info and 'data' in growth_info:
+        growth_cols = growth_info['data']
+        result['population_growth'] = {
+            'prev_month': growth_cols.get('2025년09월_전월인구수_계', 0),
+            'curr_month': growth_cols.get('2025년09월_당월인구수_계', 0),
+            'change': growth_cols.get('2025년09월_인구증감_계', 0),
+            'male_change': growth_cols.get('2025년09월_인구증감_남자인구수', 0),
+            'female_change': growth_cols.get('2025년09월_인구증감_여자인구수', 0)
+        }
     
     return jsonify(result)
 
