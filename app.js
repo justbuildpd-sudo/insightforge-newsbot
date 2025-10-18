@@ -2486,7 +2486,7 @@ function drawPopulationChart() {
         .selectAll('text')
         .style('font-size', '11px');
     
-    // 직위별 색상 (심플하게)
+    // 직위별 색상
     const positionColors = {
         '서울시장': '#ef4444',
         '구청장': '#f97316',
@@ -2495,7 +2495,111 @@ function drawPopulationChart() {
         '구의원': '#8b5cf6'
     };
     
-    // 정치인 임기 배경 표시 (간결한 형태)
+    // 정당별 색상
+    const partyColors = {
+        '국민의힘': '#E61E2B',
+        '더불어민주당': '#1E90FF',
+        '민주당': '#1E90FF',
+        '조국혁신당': '#FF6B9D',
+        '개혁신당': '#00A0E9',
+        '진보당': '#EA5504',
+        '무소속': '#808080',
+        '새누리당': '#B8003C',
+        '자유한국당': '#B8003C',
+        '정의당': '#FFCC00',
+        '기타': '#999999'
+    };
+    
+    // 지방선거 회차별 통 배경 그리기
+    const localTermsByRound = {};
+    politicianTerms.forEach(term => {
+        if (term.position !== '국회의원') {
+            const roundMatch = term.label.match(/제(\d+)회/);
+            if (roundMatch) {
+                const round = roundMatch[1];
+                if (!localTermsByRound[round]) {
+                    localTermsByRound[round] = {
+                        startDate: term.startDate,
+                        endDate: term.endDate,
+                        label: `제${round}회 지방선거`
+                    };
+                }
+            }
+        }
+    });
+    
+    // 지방선거 회차별 통 배경 표시
+    Object.entries(localTermsByRound).forEach(([round, info]) => {
+        const xDomain = x.domain();
+        if (info.endDate >= xDomain[0] && info.startDate <= xDomain[1]) {
+            const startX = Math.max(0, x(info.startDate));
+            const endX = Math.min(width, x(info.endDate));
+            
+            svg.append('rect')
+                .attr('x', startX)
+                .attr('y', 0)
+                .attr('width', endX - startX)
+                .attr('height', height)
+                .attr('fill', round === '5' ? '#FEF3C7' : round === '6' ? '#DBEAFE' : round === '7' ? '#E0E7FF' : '#FED7D7')
+                .attr('opacity', 0.3)
+                .attr('pointer-events', 'none');
+            
+            // 회차 레이블
+            svg.append('text')
+                .attr('x', startX + (endX - startX) / 2)
+                .attr('y', -10)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '11px')
+                .style('font-weight', 'bold')
+                .attr('fill', '#666')
+                .text(info.label);
+        }
+    });
+    
+    // 국회의원 정당별 통 배경 그리기
+    const naTerms = politicianTerms.filter(t => t.position === '국회의원');
+    if (naTerms.length > 0) {
+        // 국회의원 전체 기간
+        const naStart = new Date('2000-05-30');
+        const naEnd = new Date('2028-05-29');
+        const xDomain = x.domain();
+        
+        if (naEnd >= xDomain[0] && naStart <= xDomain[1]) {
+            // 정당별 정치인 수 집계
+            const partyCount = {};
+            naTerms.forEach(term => {
+                term.politicians.forEach(p => {
+                    const party = p.party || '무소속';
+                    partyCount[party] = (partyCount[party] || 0) + 1;
+                });
+            });
+            
+            // 정당별 비율로 구역 나누기
+            const totalCount = Object.values(partyCount).reduce((a, b) => a + b, 0);
+            const sortedParties = Object.entries(partyCount).sort((a, b) => b[1] - a[1]);
+            
+            let currentX = Math.max(0, x(naStart));
+            const totalWidth = Math.min(width, x(naEnd)) - currentX;
+            
+            sortedParties.forEach(([party, count]) => {
+                const partyWidth = (count / totalCount) * totalWidth;
+                const partyColor = partyColors[party] || partyColors['기타'];
+                
+                svg.append('rect')
+                    .attr('x', currentX)
+                    .attr('y', 0)
+                    .attr('width', partyWidth)
+                    .attr('height', height)
+                    .attr('fill', partyColor)
+                    .attr('opacity', 0.08)
+                    .attr('pointer-events', 'none');
+                
+                currentX += partyWidth;
+            });
+        }
+    }
+    
+    // 정치인 임기 바 표시
     politicianTerms.forEach((term, idx) => {
         const termStart = term.startDate;
         const termEnd = term.endDate;
