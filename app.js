@@ -2166,7 +2166,10 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
             '구의원': '#8b5cf6'
         };
         
-        // 지방선거 임기 (시의원, 구의원, 시장, 구청장)
+        // 표시 순서: 시장 > 국회의원 > 구청장 > 시의원 > 구의원
+        const displayOrder = [];
+        
+        // 1. 시장 (제5-8회)
         const localElectionTerms = [
             {round: 5, start: '2010-07-01', end: '2014-06-30'},
             {round: 6, start: '2014-07-01', end: '2018-06-30'},
@@ -2174,24 +2177,20 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
             {round: 8, start: '2022-07-01', end: '2026-06-30'}
         ];
         
-        const localPositions = ['시의원', '구의원', '서울시장', '구청장'];
-        
-        localElectionTerms.forEach(({round, start, end}) => {
-            Object.entries(byPosition).forEach(([position, pols]) => {
-                if (localPositions.includes(position)) {
-                    politicianTerms.push({
-                        startDate: new Date(start),
-                        endDate: new Date(end),
-                        politicians: pols,
-                        position: position,
-                        color: positionColors[position] || '#6b7280',
-                        label: `${position} (제${round}회)`
-                    });
-                }
+        if (byPosition['서울시장']) {
+            localElectionTerms.forEach(({round, start, end}) => {
+                displayOrder.push({
+                    startDate: new Date(start),
+                    endDate: new Date(end),
+                    politicians: byPosition['서울시장'],
+                    position: '서울시장',
+                    color: positionColors['서울시장'],
+                    label: `서울시장 (제${round}회)`
+                });
             });
-        });
+        }
         
-        // 국회의원 임기
+        // 2. 국회의원 (제16-22대)
         const nationalElectionTerms = [
             {term: 16, start: '2000-05-30', end: '2004-05-29'},
             {term: 17, start: '2004-05-30', end: '2008-05-29'},
@@ -2204,7 +2203,7 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
         
         if (byPosition['국회의원']) {
             nationalElectionTerms.forEach(({term, start, end}) => {
-                politicianTerms.push({
+                displayOrder.push({
                     startDate: new Date(start),
                     endDate: new Date(end),
                     politicians: byPosition['국회의원'],
@@ -2214,6 +2213,51 @@ function renderTimeseriesChart(timeseriesData, politicians, yearlyBusiness) {
                 });
             });
         }
+        
+        // 3. 구청장 (제5-8회)
+        if (byPosition['구청장']) {
+            localElectionTerms.forEach(({round, start, end}) => {
+                displayOrder.push({
+                    startDate: new Date(start),
+                    endDate: new Date(end),
+                    politicians: byPosition['구청장'],
+                    position: '구청장',
+                    color: positionColors['구청장'],
+                    label: `구청장 (제${round}회)`
+                });
+            });
+        }
+        
+        // 4. 시의원 (제5-8회)
+        if (byPosition['시의원']) {
+            localElectionTerms.forEach(({round, start, end}) => {
+                displayOrder.push({
+                    startDate: new Date(start),
+                    endDate: new Date(end),
+                    politicians: byPosition['시의원'],
+                    position: '시의원',
+                    color: positionColors['시의원'],
+                    label: `시의원 (제${round}회)`
+                });
+            });
+        }
+        
+        // 5. 구의원 (제5-8회)
+        if (byPosition['구의원']) {
+            localElectionTerms.forEach(({round, start, end}) => {
+                displayOrder.push({
+                    startDate: new Date(start),
+                    endDate: new Date(end),
+                    politicians: byPosition['구의원'],
+                    position: '구의원',
+                    color: positionColors['구의원'],
+                    label: `구의원 (제${round}회)`
+                });
+            });
+        }
+        
+        // 표시 순서대로 정렬된 배열 사용
+        politicianTerms.push(...displayOrder);
     }
     
     // 현재 데이터 저장 (지표 전환용)
@@ -2833,8 +2877,8 @@ function drawBusinessChart() {
         if (years.length > 0) {
             const startX = x(years[0]);
             const endX = x(years[years.length - 1]) + x.bandwidth();
-            const barHeight = height / Math.max(politicianTerms.length, 1);
-            const yPos = idx * barHeight;
+            const barHeight = Math.min(20, height / (politicianTerms.length * 1.2));
+            const yPos = height - (idx + 1) * barHeight * 1.2;
             
             svg.append('rect')
                 .attr('x', startX)
@@ -2844,19 +2888,37 @@ function drawBusinessChart() {
                 .attr('fill', term.color)
                 .attr('opacity', 0.15)
                 .attr('stroke', term.color)
-                .attr('stroke-width', 1)
-                .attr('stroke-dasharray', '3,3');
+                .attr('stroke-width', 1.5)
+                .attr('rx', 3);
             
-            const uniqueParties = [...new Set(term.politicians.map(p => p.party))];
-            const partyText = uniqueParties.slice(0, 2).join(', ') + (uniqueParties.length > 2 ? ' 외' : '');
+            // 정당별로 정치인 그룹화
+            const byParty = {};
+            term.politicians.forEach(p => {
+                const party = p.party || '무소속';
+                if (!byParty[party]) byParty[party] = [];
+                byParty[party].push(p);
+            });
             
-            svg.append('text')
-                .attr('x', startX + 5)
-                .attr('y', yPos + 15)
-                .style('font-size', '9px')
-                .style('font-weight', 'bold')
-                .attr('fill', term.color)
-                .text(`${term.label}: ${partyText}`);
+            // 정치인 이름 표시
+            const barWidth = endX - startX;
+            if (barWidth > 50) {
+                const partyGroups = Object.entries(byParty)
+                    .sort((a, b) => b[1].length - a[1].length)
+                    .map(([party, pols]) => {
+                        const names = pols.slice(0, 2).map(p => p.name).join(', ');
+                        return pols.length > 2 ? `${names} 외${pols.length - 2}` : names;
+                    });
+                
+                const displayText = partyGroups.join(' / ');
+                
+                svg.append('text')
+                    .attr('x', startX + 5)
+                    .attr('y', yPos + barHeight / 2 + 4)
+                    .style('font-size', '9px')
+                    .style('font-weight', '500')
+                    .attr('fill', term.color)
+                    .text(displayText);
+            }
         }
     });
     
