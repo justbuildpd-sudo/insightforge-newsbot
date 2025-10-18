@@ -253,6 +253,50 @@ def get_regions():
     data = load_json_file('sgis_national_regions.json')
     return jsonify(data or {})
 
+@app.route('/api/emdong/<emdong_code>/timeseries')
+def get_emdong_timeseries(emdong_code):
+    """읍면동 시계열 데이터 (월별 인구 변화)"""
+    # 코드 매핑
+    code_mapping = load_json_file('code_mapping.json') or {}
+    mapping_dict = code_mapping.get('mapping', {})
+    
+    jumin_code = None
+    if emdong_code in mapping_dict:
+        jumin_code = mapping_dict[emdong_code]['jumin_code']
+    
+    # 인구증감 데이터 (월별)
+    growth_data = load_json_file('jumin_growth_2025.json') or {}
+    growth_info = {}
+    if jumin_code and 'regions' in growth_data and jumin_code in growth_data['regions']:
+        growth_info = growth_data['regions'][jumin_code].get('data', {})
+    
+    # 월별 데이터 추출
+    monthly_data = []
+    for key, value in growth_info.items():
+        if '당월인구수_계' in key:
+            year_month = key.split('_')[0]  # "2025년09월"
+            year = year_month[:4]  # "2025"
+            month = year_month[5:7]  # "09"
+            
+            monthly_data.append({
+                'year': int(year),
+                'month': int(month),
+                'date': f'{year}-{month}',
+                'population': value,
+                'male': growth_info.get(f'{year_month}_당월인구수_남자인구수', 0),
+                'female': growth_info.get(f'{year_month}_당월인구수_여자인구수', 0),
+                'change': growth_info.get(f'{year_month}_인구증감_계', 0)
+            })
+    
+    # 날짜순 정렬
+    monthly_data.sort(key=lambda x: (x['year'], x['month']))
+    
+    return jsonify({
+        'emdong_code': emdong_code,
+        'jumin_code': jumin_code,
+        'timeseries': monthly_data
+    })
+
 @app.route('/api/years')
 def get_available_years():
     """사용 가능한 연도 목록"""

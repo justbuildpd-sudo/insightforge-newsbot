@@ -330,6 +330,11 @@ async function selectEmdong(emdongCode) {
         
         renderEmdongDetail(data);
         
+        // 시계열 그래프 렌더링
+        if (window.loadAndRenderTimeseries) {
+            loadAndRenderTimeseries(emdongCode);
+        }
+        
         // 시계열 데이터도 가져오기 (있는 경우)
         loadTimeseriesData(emdongCode);
         
