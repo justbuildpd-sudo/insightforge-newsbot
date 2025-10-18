@@ -226,6 +226,9 @@ async function toggleSigungu(sigunguCode) {
             const data = await response.json();
             console.log('📦 시군구 상세 데이터 (toggle):', data);
             renderSigunguDetail(data);
+            
+            // 시계열 그래프도 로드
+            loadSigunguTimeseries(sigunguCode);
         } catch (error) {
             console.error('❌ 시군구 상세 정보 로드 실패:', error);
         }
@@ -248,6 +251,9 @@ async function selectSigungu(sigunguCode) {
         
         console.log('📦 시군구 상세 데이터:', data);
         renderSigunguDetail(data);
+        
+        // 시계열 그래프 렌더링
+        loadSigunguTimeseries(sigunguCode);
         
     } catch (error) {
         console.error('❌ 시군구 상세 정보 로드 실패:', error);
@@ -1014,6 +1020,9 @@ function renderSigunguDetail(data) {
                 <h2 class="text-3xl font-bold text-gray-900">${data.full_address || ''}</h2>
                 <p class="text-gray-600 mt-1">시군구 코드: ${data.sigungu_code}</p>
             </div>
+            
+            <!-- 시계열 차트 영역 -->
+            <div id="timeseriesChart" class="mb-6"></div>
             
             <!-- 주요 통계 카드 -->
             <div class="grid grid-cols-4 gap-4 mb-6">
@@ -2182,10 +2191,29 @@ function renderTimeseriesChart(timeseriesData) {
         .text('인구 (명)');
 }
 
+// 시군구용 시계열 로드
+async function loadSigunguTimeseries(sigunguCode) {
+    try {
+        const response = await fetch(`${API_BASE}/api/sigungu/${sigunguCode}/timeseries`);
+        const data = await response.json();
+        
+        if (!data.timeseries || data.timeseries.length === 0) {
+            console.log('시군구 시계열 데이터 없음');
+            return;
+        }
+        
+        renderTimeseriesChart(data.timeseries);
+        
+    } catch (error) {
+        console.error('시군구 시계열 데이터 로드 실패:', error);
+    }
+}
+
 // 함수 별칭
 const loadEmdongTimeseries = loadAndRenderTimeseries;
 
 // 전역 함수로 등록
 window.loadAndRenderTimeseries = loadAndRenderTimeseries;
 window.loadEmdongTimeseries = loadEmdongTimeseries;
+window.loadSigunguTimeseries = loadSigunguTimeseries;
 

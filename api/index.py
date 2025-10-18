@@ -297,6 +297,128 @@ def get_emdong_timeseries(emdong_code):
         'timeseries': monthly_data
     })
 
+@app.route('/api/sigungu/<sigungu_code>/timeseries')
+def get_sigungu_timeseries(sigungu_code):
+    """시군구 시계열 데이터 (읍면동 합산)"""
+    # 코드 매핑
+    code_mapping = load_json_file('code_mapping.json') or {}
+    mapping_dict = code_mapping.get('mapping', {})
+    
+    # 인구증감 데이터
+    growth_data = load_json_file('jumin_growth_2025.json') or {}
+    
+    # 해당 시군구의 모든 읍면동 코드 찾기
+    emdong_codes = [k for k in mapping_dict.keys() if k.startswith(sigungu_code)]
+    
+    # 월별 데이터 집계
+    monthly_totals = {}
+    
+    for emdong_code in emdong_codes:
+        jumin_code = mapping_dict[emdong_code]['jumin_code']
+        
+        if 'regions' in growth_data and jumin_code in growth_data['regions']:
+            growth_info = growth_data['regions'][jumin_code].get('data', {})
+            
+            for key, value in growth_info.items():
+                if '당월인구수_계' in key:
+                    year_month = key.split('_')[0]
+                    
+                    if year_month not in monthly_totals:
+                        monthly_totals[year_month] = {
+                            'population': 0,
+                            'male': 0,
+                            'female': 0,
+                            'change': 0
+                        }
+                    
+                    monthly_totals[year_month]['population'] += value
+                    monthly_totals[year_month]['male'] += growth_info.get(f'{year_month}_당월인구수_남자인구수', 0)
+                    monthly_totals[year_month]['female'] += growth_info.get(f'{year_month}_당월인구수_여자인구수', 0)
+                    monthly_totals[year_month]['change'] += growth_info.get(f'{year_month}_인구증감_계', 0)
+    
+    # 월별 데이터 배열로 변환
+    monthly_data = []
+    for year_month, totals in sorted(monthly_totals.items()):
+        year = year_month[:4]
+        month = year_month[5:7]
+        
+        monthly_data.append({
+            'year': int(year),
+            'month': int(month),
+            'date': f'{year}-{month}',
+            'population': totals['population'],
+            'male': totals['male'],
+            'female': totals['female'],
+            'change': totals['change']
+        })
+    
+    return jsonify({
+        'sigungu_code': sigungu_code,
+        'emdong_count': len(emdong_codes),
+        'timeseries': monthly_data
+    })
+
+@app.route('/api/sido/<sido_code>/timeseries')
+def get_sido_timeseries(sido_code):
+    """시도 시계열 데이터 (시군구 합산)"""
+    # 코드 매핑
+    code_mapping = load_json_file('code_mapping.json') or {}
+    mapping_dict = code_mapping.get('mapping', {})
+    
+    # 인구증감 데이터
+    growth_data = load_json_file('jumin_growth_2025.json') or {}
+    
+    # 해당 시도의 모든 읍면동 코드 찾기
+    emdong_codes = [k for k in mapping_dict.keys() if k.startswith(sido_code)]
+    
+    # 월별 데이터 집계
+    monthly_totals = {}
+    
+    for emdong_code in emdong_codes:
+        jumin_code = mapping_dict[emdong_code]['jumin_code']
+        
+        if 'regions' in growth_data and jumin_code in growth_data['regions']:
+            growth_info = growth_data['regions'][jumin_code].get('data', {})
+            
+            for key, value in growth_info.items():
+                if '당월인구수_계' in key:
+                    year_month = key.split('_')[0]
+                    
+                    if year_month not in monthly_totals:
+                        monthly_totals[year_month] = {
+                            'population': 0,
+                            'male': 0,
+                            'female': 0,
+                            'change': 0
+                        }
+                    
+                    monthly_totals[year_month]['population'] += value
+                    monthly_totals[year_month]['male'] += growth_info.get(f'{year_month}_당월인구수_남자인구수', 0)
+                    monthly_totals[year_month]['female'] += growth_info.get(f'{year_month}_당월인구수_여자인구수', 0)
+                    monthly_totals[year_month]['change'] += growth_info.get(f'{year_month}_인구증감_계', 0)
+    
+    # 월별 데이터 배열로 변환
+    monthly_data = []
+    for year_month, totals in sorted(monthly_totals.items()):
+        year = year_month[:4]
+        month = year_month[5:7]
+        
+        monthly_data.append({
+            'year': int(year),
+            'month': int(month),
+            'date': f'{year}-{month}',
+            'population': totals['population'],
+            'male': totals['male'],
+            'female': totals['female'],
+            'change': totals['change']
+        })
+    
+    return jsonify({
+        'sido_code': sido_code,
+        'emdong_count': len(emdong_codes),
+        'timeseries': monthly_data
+    })
+
 @app.route('/api/years')
 def get_available_years():
     """사용 가능한 연도 목록"""
