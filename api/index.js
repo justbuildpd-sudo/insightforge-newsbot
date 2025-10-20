@@ -1,6 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const zlib = require('zlib');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import zlib from 'zlib';
+
+// ES modules에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 데이터 디렉토리
 const DATA_DIR = path.join(process.cwd(), 'insightforge-web', 'data');
@@ -52,7 +57,7 @@ const corsHeaders = {
 };
 
 // 메인 핸들러
-module.exports = async (req, res) => {
+export default async (req, res) => {
     // CORS preflight
     if (req.method === 'OPTIONS') {
         return res.status(200).json({});
