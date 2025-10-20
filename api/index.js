@@ -146,9 +146,20 @@ module.exports = (req, res) => {
         
         // /api/national/sido
         if (url.match(/\/api\/national\/sido/)) {
+            const sidoList = loadJsonFile('sido_sigungu_list.json');
+            if (sidoList) {
+                // 시도 목록을 배열로 변환
+                const result = Object.keys(sidoList).map(sido => ({
+                    name: sido,
+                    sigungu_count: sidoList[sido].length,
+                    sigungu_list: sidoList[sido]
+                }));
+                return res.status(200).json(result);
+            }
+            
+            // fallback: national_comprehensive_data.json 사용
             const data = loadJsonFile('national_comprehensive_data.json');
             if (data) {
-                // 지역 코드로 키가 되어 있는 구조를 배열로 변환
                 const sidoMap = {};
                 Object.values(data).forEach(item => {
                     if (item.sido && !sidoMap[item.sido]) {
@@ -167,33 +178,44 @@ module.exports = (req, res) => {
         const sidoMatch = url.match(/\/api\/sido\/([^/]+)$/);
         if (sidoMatch) {
             const sidoName = decodeURIComponent(sidoMatch[1]);
-            const filename = sidoName === 'seoul' || sidoName === '서울' 
-                ? 'seoul_final_data.json' 
-                : `${sidoName}_comprehensive_data.json`;
             
-            // 디버깅: 파일 경로 확인
-            const filePath = path.join(DATA_DIR, filename);
-            const fileExists = fs.existsSync(filePath);
+            // 서울은 상세 데이터 사용
+            if (sidoName === 'seoul' || sidoName === '서울' || sidoName === '서울특별시') {
+                const data = loadJsonFile('seoul_final_data.json');
+                if (data && data.regions) {
+                    return res.status(200).json(data);
+                }
+            }
             
-            const data = loadJsonFile(filename);
-            
-            if (data && data.regions) {
-                // seoul_final_data.json 형식
-                return res.status(200).json(data);
-            } else if (data) {
-                // 기타 데이터 형식
-                return res.status(200).json(data);
+            // 다른 시도는 national_comprehensive_data에서 필터링
+            const nationalData = loadJsonFile('national_comprehensive_data.json');
+            if (nationalData) {
+                const sidoData = {};
+                Object.entries(nationalData).forEach(([code, item]) => {
+                    if (item.sido === sidoName || item.sido === sidoName + '특별시' || 
+                        item.sido === sidoName + '광역시' || item.sido === sidoName + '도') {
+                        sidoData[code] = item;
+                    }
+                });
+                
+                if (Object.keys(sidoData).length > 0) {
+                    // 시군구 목록 추가
+                    const sidoList = loadJsonFile('sido_sigungu_list.json');
+                    const sigunguList = sidoList ? (sidoList[sidoName] || []) : [];
+                    
+                    return res.status(200).json({
+                        sidoName: sidoName,
+                        sigungu_count: Object.keys(sidoData).length,
+                        sigungu_list: sigunguList,
+                        data: sidoData
+                    });
+                }
             }
             
             return res.status(404).json({ 
                 error: 'Sido not found',
-                filename: filename,
-                filePath: filePath,
-                fileExists: fileExists,
-                dataLoaded: !!data,
-                dataKeys: data ? Object.keys(data) : null,
-                cacheKeys: Object.keys(dataCache),
-                loadError: loadErrors[filename] || 'Unknown'
+                sidoName: sidoName,
+                hint: 'Try: 서울특별시, 경기도, 부산광역시, etc.'
             });
         }
         
