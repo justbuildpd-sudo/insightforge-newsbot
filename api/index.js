@@ -397,6 +397,46 @@ module.exports = (req, res) => {
             return res.status(200).json({ total: 0, politicians: [] });
         }
         
+        // /api/network/assembly - 국회의원 네트워크 (상위 10명)
+        if (url.match(/\/api\/network\/assembly/)) {
+            const networkData = loadJsonFile('assembly_network_graph.json');
+            if (networkData) {
+                // 상위 10명만 반환
+                const top10 = networkData.top_50_members ? 
+                    networkData.top_50_members.slice(0, 10) : [];
+                
+                return res.status(200).json({
+                    metadata: networkData.metadata,
+                    top_members: top10,
+                    total_members: networkData.members ? Object.keys(networkData.members).length : 0,
+                    total_connections: networkData.connection_stats?.total_connections || 0,
+                    clusters_count: networkData.clusters ? networkData.clusters.length : 0
+                });
+            }
+            return res.status(404).json({ error: 'Network data not found' });
+        }
+        
+        // /api/network/member/<name> - 특정 의원 네트워크
+        const networkMemberMatch = url.match(/\/api\/network\/member\/([^/]+)/);
+        if (networkMemberMatch) {
+            const memberName = decodeURIComponent(networkMemberMatch[1]);
+            const networkData = loadJsonFile('assembly_network_graph.json');
+            
+            if (networkData && networkData.member_connections && networkData.member_connections[memberName]) {
+                return res.status(200).json({
+                    name: memberName,
+                    connections: networkData.member_connections[memberName],
+                    cluster: networkData.member_to_cluster?.[memberName],
+                    member_info: networkData.members?.[memberName]
+                });
+            }
+            
+            return res.status(404).json({ 
+                error: 'Member network not found',
+                name: memberName
+            });
+        }
+        
         // /api/search
         if (url.match(/\/api\/search/)) {
             return res.status(200).json({ results: [] });
@@ -414,7 +454,9 @@ module.exports = (req, res) => {
                 '/api/population/*',
                 '/api/politician/<name>/lda',
                 '/api/lda/assembly',
-                '/api/lda/local'
+                '/api/lda/local',
+                '/api/network/assembly',
+                '/api/network/member/<name>'
             ]
         });
         
