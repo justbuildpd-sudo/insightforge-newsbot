@@ -540,6 +540,86 @@ module.exports = (req, res) => {
             });
         }
         
+        // /api/gdp/<region> - 상세 GDP 데이터
+        const gdpRegionMatch = url.match(/\/api\/gdp\/([^/]+)/);
+        if (gdpRegionMatch) {
+            const region = decodeURIComponent(gdpRegionMatch[1]);
+            const gdpData = loadJsonFile('seoul_detailed_gdp_data.json');
+            
+            if (gdpData && gdpData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    data: gdpData[region]
+                });
+            }
+            
+            return res.status(404).json({ error: 'GDP data not found', region: region });
+        }
+        
+        // /api/education/<region> - 교육 데이터
+        const educationMatch = url.match(/\/api\/education\/([^/]+)/);
+        if (educationMatch) {
+            const region = decodeURIComponent(educationMatch[1]);
+            const eduData = loadJsonFile('seoul_education_data.json');
+            
+            if (eduData && eduData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    data: eduData[region]
+                });
+            }
+            
+            return res.status(404).json({ error: 'Education data not found', region: region });
+        }
+        
+        // /api/commercial/<region> - 상업지역 데이터
+        const commercialMatch = url.match(/\/api\/commercial\/([^/]+)/);
+        if (commercialMatch) {
+            const region = decodeURIComponent(commercialMatch[1]);
+            const commercialData = loadJsonFile('seoul_commercial_area_data.json');
+            
+            if (commercialData && commercialData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    data: commercialData[region]
+                });
+            }
+            
+            return res.status(404).json({ error: 'Commercial data not found', region: region });
+        }
+        
+        // /api/safety/<region> - 안전 데이터
+        const safetyMatch = url.match(/\/api\/safety\/([^/]+)/);
+        if (safetyMatch) {
+            const region = decodeURIComponent(safetyMatch[1]);
+            const safetyData = loadJsonFile('seoul_safety_data.json');
+            
+            if (safetyData && safetyData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    data: safetyData[region]
+                });
+            }
+            
+            return res.status(404).json({ error: 'Safety data not found', region: region });
+        }
+        
+        // /api/traffic/<region> - 교통 데이터
+        const trafficMatch = url.match(/\/api\/traffic\/([^/]+)/);
+        if (trafficMatch) {
+            const region = decodeURIComponent(trafficMatch[1]);
+            const trafficData = loadJsonFile('seoul_traffic_data.json');
+            
+            if (trafficData && trafficData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    data: trafficData[region]
+                });
+            }
+            
+            return res.status(404).json({ error: 'Traffic data not found', region: region });
+        }
+        
         // /api/search/news - 네이버 뉴스 검색
         const newsSearchMatch = url.match(/\/api\/search\/news/);
         if (newsSearchMatch) {
