@@ -442,6 +442,86 @@ module.exports = (req, res) => {
             });
         }
         
+        // /api/issues - 전체 이슈 추적
+        if (url.match(/\/api\/issues$/)) {
+            const issueData = loadJsonFile('issue_articles_tracking.json');
+            if (issueData) {
+                return res.status(200).json(issueData);
+            }
+            return res.status(404).json({ error: 'Issue data not found' });
+        }
+        
+        // /api/issues/<region> - 지역별 이슈
+        const issueRegionMatch = url.match(/\/api\/issues\/([^/]+)/);
+        if (issueRegionMatch) {
+            const region = decodeURIComponent(issueRegionMatch[1]);
+            const issueData = loadJsonFile('issue_articles_tracking.json');
+            
+            if (issueData && issueData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    issues: issueData[region]
+                });
+            }
+            
+            return res.status(404).json({ 
+                error: 'Region issues not found',
+                region: region
+            });
+        }
+        
+        // /api/news/<region> - 지역별 뉴스
+        const newsRegionMatch = url.match(/\/api\/news\/([^/]+)/);
+        if (newsRegionMatch) {
+            const region = decodeURIComponent(newsRegionMatch[1]);
+            const newsData = loadJsonFile('gu_news_articles.json');
+            
+            if (newsData && newsData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    news: newsData[region]
+                });
+            }
+            
+            return res.status(404).json({ 
+                error: 'Region news not found',
+                region: region
+            });
+        }
+        
+        // /api/keywords/<region> - 지역별 키워드
+        const keywordRegionMatch = url.match(/\/api\/keywords\/([^/]+)/);
+        if (keywordRegionMatch) {
+            const region = decodeURIComponent(keywordRegionMatch[1]);
+            const keywordData = loadJsonFile('gu_news_keywords.json');
+            
+            if (keywordData && keywordData[region]) {
+                return res.status(200).json({
+                    region: region,
+                    keywords: keywordData[region]
+                });
+            }
+            
+            return res.status(404).json({ 
+                error: 'Region keywords not found',
+                region: region
+            });
+        }
+        
+        // /api/audit/<region> - 감사 키워드
+        const auditRegionMatch = url.match(/\/api\/audit\/([^/]+)/);
+        if (auditRegionMatch) {
+            const region = decodeURIComponent(auditRegionMatch[1]);
+            const auditKeywords = loadJsonFile('gu_audit_keywords.json');
+            const auditNews = loadJsonFile('gu_audit_news.json');
+            
+            return res.status(200).json({
+                region: region,
+                keywords: auditKeywords?.[region] || [],
+                news: auditNews?.[region] || []
+            });
+        }
+        
         // /api/search/news - 네이버 뉴스 검색
         const newsSearchMatch = url.match(/\/api\/search\/news/);
         if (newsSearchMatch) {
