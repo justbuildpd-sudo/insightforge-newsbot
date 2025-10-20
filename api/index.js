@@ -242,14 +242,19 @@ module.exports = (req, res) => {
                 const sidoData = censusData.by_sido[sidoName];
                 
                 // 코드에 명칭 매핑 추가
-                const mappingData = codeMapping?.mapping || {};
+                const mappingData = codeMapping?.mapping || codeMapping || {};
+                console.log('Mapping data keys:', mappingData ? Object.keys(mappingData).slice(0, 5) : 'none');
+                
                 const enrichedData = {};
                 Object.entries(sidoData).forEach(([code, data]) => {
                     const mapping = mappingData[code];
+                    const fullAddress = mapping?.full_address || code;
+                    const addressParts = fullAddress.split(' ');
+                    
                     enrichedData[code] = {
                         ...data,
-                        name: mapping?.full_address || code,
-                        sigungu_name: mapping?.full_address ? mapping.full_address.split(' ').slice(1, 3).join(' ') : code
+                        name: fullAddress,
+                        sigungu_name: addressParts.length >= 2 ? addressParts.slice(1).join(' ') : fullAddress
                     };
                 });
                 
