@@ -1,11 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import zlib from 'zlib';
-
-// ES modules에서 __dirname 대체
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
+const zlib = require('zlib');
 
 // 데이터 디렉토리
 const DATA_DIR = path.join(process.cwd(), 'insightforge-web', 'data');
@@ -57,7 +52,7 @@ const corsHeaders = {
 };
 
 // 메인 핸들러
-export default async (req, res) => {
+module.exports = (req, res) => {
     // CORS preflight
     if (req.method === 'OPTIONS') {
         return res.status(200).json({});
@@ -68,23 +63,19 @@ export default async (req, res) => {
         res.setHeader(key, value);
     });
     
-    const { url } = req;
-    console.log('📥 Request:', url);
-    console.log('📁 DATA_DIR:', DATA_DIR);
-    console.log('📁 DATA_DIR exists:', fs.existsSync(DATA_DIR));
-    console.log('📁 cwd:', process.cwd());
-    
-    // Debug endpoint
-    if (url.match(/\/api\/debug/)) {
-        return res.status(200).json({
-            cwd: process.cwd(),
-            dataDir: DATA_DIR,
-            dataDirExists: fs.existsSync(DATA_DIR),
-            files: fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR).slice(0, 10) : []
-        });
-    }
+    const url = req.url || '/';
     
     try {
+        // Debug endpoint
+        if (url.match(/\/api\/debug/)) {
+            return res.status(200).json({
+                cwd: process.cwd(),
+                dataDir: DATA_DIR,
+                dataDirExists: fs.existsSync(DATA_DIR),
+                files: fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR).slice(0, 10) : []
+            });
+        }
+        
         // /api/politicians/si_uiwon
         if (url.match(/\/api\/politicians\/si_uiwon/)) {
             const data = loadJsonFile('seoul_si_uiwon_8th.json');
@@ -156,7 +147,7 @@ export default async (req, res) => {
         }
         
         // /api/sido/<sido_name>
-        const sidoMatch = url.match(/\/api\/sido\/([^/]+)/);
+        const sidoMatch = url.match(/\/api\/sido\/([^/]+)$/);
         if (sidoMatch) {
             const sidoName = decodeURIComponent(sidoMatch[1]);
             const filename = sidoName === 'seoul' || sidoName === '서울' 
@@ -167,7 +158,7 @@ export default async (req, res) => {
         }
         
         // /api/sigungu/<sigungu_name>
-        const sigunguMatch = url.match(/\/api\/sigungu\/([^/]+)/);
+        const sigunguMatch = url.match(/\/api\/sigungu\/([^/]+)$/);
         if (sigunguMatch) {
             const sigunguName = decodeURIComponent(sigunguMatch[1]);
             const seoulData = loadJsonFile('seoul_final_data.json');
@@ -181,7 +172,7 @@ export default async (req, res) => {
         }
         
         // /api/emdong/<sigungu>/<emdong>
-        const emdongMatch = url.match(/\/api\/emdong\/([^/]+)\/([^/]+)/);
+        const emdongMatch = url.match(/\/api\/emdong\/([^/]+)\/([^/]+)$/);
         if (emdongMatch) {
             const sigunguName = decodeURIComponent(emdongMatch[1]);
             const emdongName = decodeURIComponent(emdongMatch[2]);
@@ -204,7 +195,6 @@ export default async (req, res) => {
             const sigunguName = decodeURIComponent(timeseriesMatch[1]);
             const emdongName = decodeURIComponent(timeseriesMatch[2]);
             
-            // 월별 데이터 로드
             const monthlyData = loadJsonFile('jumin_monthly_full.json');
             if (monthlyData && monthlyData.emdongs) {
                 const emdongData = monthlyData.emdongs.find(e => 
@@ -225,7 +215,6 @@ export default async (req, res) => {
             if (monthlyData && monthlyData.emdongs) {
                 const sigunguData = monthlyData.emdongs.filter(e => e.sigungu === sigunguName);
                 if (sigunguData.length > 0) {
-                    // Aggregate by month
                     const aggregated = {};
                     sigunguData.forEach(emdong => {
                         emdong.data.forEach(monthData => {
@@ -253,7 +242,6 @@ export default async (req, res) => {
             const sidoName = decodeURIComponent(sidoTimeseriesMatch[1]);
             const monthlyData = loadJsonFile('jumin_monthly_full.json');
             if (monthlyData && monthlyData.emdongs) {
-                // Aggregate all
                 const aggregated = {};
                 monthlyData.emdongs.forEach(emdong => {
                     emdong.data.forEach(monthData => {
@@ -276,7 +264,9 @@ export default async (req, res) => {
         
         // /api/years
         if (url.match(/\/api\/years/)) {
-            return res.status(200).json({ years: ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'] });
+            return res.status(200).json({ 
+                years: ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'] 
+            });
         }
         
         // /api/search
@@ -285,11 +275,23 @@ export default async (req, res) => {
         }
         
         // Default 404
-        return res.status(404).json({ error: 'Not found', url });
+        return res.status(404).json({ 
+            error: 'Not found', 
+            url: url,
+            availableEndpoints: [
+                '/api/debug',
+                '/api/national/sido',
+                '/api/sido/<name>',
+                '/api/politicians/*',
+                '/api/population/*'
+            ]
+        });
         
     } catch (error) {
-        console.error('❌ Error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('Error:', error);
+        return res.status(500).json({ 
+            error: 'Internal server error',
+            message: error.message 
+        });
     }
 };
-
