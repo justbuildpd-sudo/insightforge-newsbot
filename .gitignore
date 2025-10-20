@@ -52,3 +52,4 @@ InsightForge/
 multiyear_progress.json
 collector*.pid
 
+.env

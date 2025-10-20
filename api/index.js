@@ -1,9 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const https = require('https');
 
 // 데이터 디렉토리
 const DATA_DIR = path.join(process.cwd(), 'insightforge-web', 'data');
+
+// 네이버 API 키 (Vercel 환경변수 사용)
+const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || 'ULDLTGiPvrrPBgbuydSm';
+const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || 'uO5mu7UQBg';
 
 // 캐시
 const dataCache = {};
@@ -434,6 +439,47 @@ module.exports = (req, res) => {
             return res.status(404).json({ 
                 error: 'Member network not found',
                 name: memberName
+            });
+        }
+        
+        // /api/search/news - 네이버 뉴스 검색
+        const newsSearchMatch = url.match(/\/api\/search\/news/);
+        if (newsSearchMatch) {
+            const query = req.query?.q || '';
+            if (!query) {
+                return res.status(400).json({ error: 'Query parameter required' });
+            }
+            
+            return new Promise((resolve) => {
+                const encodedQuery = encodeURIComponent(query);
+                const options = {
+                    hostname: 'openapi.naver.com',
+                    path: `/v1/search/news.json?query=${encodedQuery}&display=10&sort=date`,
+                    method: 'GET',
+                    headers: {
+                        'X-Naver-Client-Id': NAVER_CLIENT_ID,
+                        'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
+                    }
+                };
+                
+                const request = https.request(options, (response) => {
+                    let data = '';
+                    response.on('data', (chunk) => { data += chunk; });
+                    response.on('end', () => {
+                        try {
+                            const result = JSON.parse(data);
+                            resolve(res.status(200).json(result));
+                        } catch (e) {
+                            resolve(res.status(500).json({ error: 'Parse error', details: data }));
+                        }
+                    });
+                });
+                
+                request.on('error', (error) => {
+                    resolve(res.status(500).json({ error: error.message }));
+                });
+                
+                request.end();
             });
         }
         
