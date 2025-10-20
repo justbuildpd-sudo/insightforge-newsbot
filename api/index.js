@@ -14,32 +14,29 @@ function loadJsonFile(filename) {
         return dataCache[filename];
     }
     
-    // gzip 파일 먼저 시도
-    const gzPath = path.join(DATA_DIR, filename + '.gz');
-    if (fs.existsSync(gzPath)) {
-        try {
+    try {
+        // 일반 파일 먼저 시도
+        const filePath = path.join(DATA_DIR, filename);
+        if (fs.existsSync(filePath)) {
+            const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+            dataCache[filename] = data;
+            return data;
+        }
+        
+        // gzip 파일 시도
+        const gzPath = path.join(DATA_DIR, filename + '.gz');
+        if (fs.existsSync(gzPath)) {
             const compressed = fs.readFileSync(gzPath);
             const decompressed = zlib.gunzipSync(compressed);
             const data = JSON.parse(decompressed.toString('utf-8'));
             dataCache[filename] = data;
             return data;
-        } catch (error) {
-            console.error(`Error loading ${filename}.gz:`, error);
         }
-    }
-    
-    // 일반 파일
-    const filePath = path.join(DATA_DIR, filename);
-    if (!fs.existsSync(filePath)) {
+        
+        console.error(`File not found: ${filename}`);
         return null;
-    }
-    
-    try {
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-        dataCache[filename] = data;
-        return data;
     } catch (error) {
-        console.error(`Error loading ${filename}:`, error);
+        console.error(`Error loading ${filename}:`, error.message);
         return null;
     }
 }
