@@ -146,41 +146,34 @@ module.exports = (req, res) => {
         
         // /api/national/sido
         if (url.match(/\/api\/national\/sido/)) {
-            const sidoList = loadJsonFile('sido_sigungu_list.json');
-            const nationalData = loadJsonFile('national_comprehensive_data.json');
+            const censusData = loadJsonFile('national_census_data.json');
             
-            // 실제 데이터가 있는 시도만 포함
-            const sidoWithData = {};
-            if (nationalData) {
-                Object.values(nationalData).forEach(item => {
-                    if (item.sido && !sidoWithData[item.sido]) {
-                        sidoWithData[item.sido] = {
-                            name: item.sido,
-                            code: item.sido_code,
-                            count: 0
-                        };
-                    }
-                    if (item.sido) {
-                        sidoWithData[item.sido].count++;
-                    }
-                });
-            }
-            
-            if (sidoList) {
-                // 시도 목록을 배열로 변환하되, 데이터가 있는 것만
-                const result = Object.keys(sidoList)
-                    .filter(sido => sidoWithData[sido] || sido === '서울특별시')
-                    .map(sido => ({
+            if (censusData && censusData.by_sido) {
+                // Census 데이터의 시도 목록 반환
+                const result = Object.keys(censusData.by_sido).map(sido => {
+                    const regions = censusData.by_sido[sido];
+                    return {
                         name: sido,
-                        sigungu_count: sidoList[sido].length,
-                        sigungu_list: sidoList[sido],
-                        hasData: !!sidoWithData[sido] || sido === '서울특별시'
-                    }));
+                        region_count: Object.keys(regions).length,
+                        hasData: true
+                    };
+                }).sort((a, b) => a.name.localeCompare(b.name));
+                
                 return res.status(200).json(result);
             }
             
-            // fallback
-            return res.status(200).json(Object.values(sidoWithData));
+            // fallback: 기존 데이터
+            const sidoList = loadJsonFile('sido_sigungu_list.json');
+            if (sidoList) {
+                const result = Object.keys(sidoList).map(sido => ({
+                    name: sido,
+                    sigungu_count: sidoList[sido].length,
+                    hasData: false
+                }));
+                return res.status(200).json(result);
+            }
+            
+            return res.status(200).json([]);
         }
         
         // /api/sido/<sido_name>
@@ -196,45 +189,27 @@ module.exports = (req, res) => {
                 }
             }
             
-            // 시도 코드 매핑 로드
-            const sidoCodeMapping = loadJsonFile('sido_code_mapping.json');
-            const reverseMapping = {};
-            if (sidoCodeMapping) {
-                Object.entries(sidoCodeMapping).forEach(([code, name]) => {
-                    reverseMapping[name] = 'sido' + code;
-                });
-            }
-            
-            // 다른 시도는 national_comprehensive_data에서 필터링
-            const nationalData = loadJsonFile('national_comprehensive_data.json');
-            if (nationalData) {
-                const targetSidoCode = reverseMapping[sidoName] || sidoName;
-                const sidoData = {};
+            // Census 데이터에서 시도별 데이터 추출
+            const censusData = loadJsonFile('national_census_data.json');
+            if (censusData && censusData.by_sido && censusData.by_sido[sidoName]) {
+                const sidoData = censusData.by_sido[sidoName];
                 
-                Object.entries(nationalData).forEach(([code, item]) => {
-                    if (item.sido === sidoName || item.sido === targetSidoCode) {
-                        sidoData[code] = item;
-                    }
+                return res.status(200).json({
+                    metadata: {
+                        sido: sidoName,
+                        total_regions: Object.keys(sidoData).length,
+                        years: censusData.metadata.years,
+                        source: 'Census 데이터'
+                    },
+                    regions: sidoData
                 });
-                
-                if (Object.keys(sidoData).length > 0) {
-                    // 시군구 목록 추가
-                    const sidoList = loadJsonFile('sido_sigungu_list.json');
-                    const sigunguList = sidoList ? (sidoList[sidoName] || []) : [];
-                    
-                    return res.status(200).json({
-                        sidoName: sidoName,
-                        sigungu_count: Object.keys(sidoData).length,
-                        sigungu_list: sigunguList,
-                        data: sidoData
-                    });
-                }
             }
             
             return res.status(404).json({ 
                 error: 'Sido not found',
                 sidoName: sidoName,
-                hint: 'Try: 서울특별시, 경기도, 부산광역시, etc.'
+                hint: 'Try: 서울특별시, 경기도, 부산광역시, 대구광역시, 인천광역시, etc.',
+                availableSido: censusData && censusData.by_sido ? Object.keys(censusData.by_sido) : []
             });
         }
         
