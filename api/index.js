@@ -241,31 +241,17 @@ module.exports = (req, res) => {
             if (censusData && censusData.by_sido && censusData.by_sido[sidoName]) {
                 const sidoData = censusData.by_sido[sidoName];
                 
-                // 코드에 명칭 매핑 추가
-                const mappingData = codeMapping?.mapping || codeMapping || {};
-                console.log('Mapping data keys:', mappingData ? Object.keys(mappingData).slice(0, 5) : 'none');
-                
-                const enrichedData = {};
-                Object.entries(sidoData).forEach(([code, data]) => {
-                    const mapping = mappingData[code];
-                    const fullAddress = mapping?.full_address || code;
-                    const addressParts = fullAddress.split(' ');
-                    
-                    enrichedData[code] = {
-                        ...data,
-                        name: fullAddress,
-                        sigungu_name: addressParts.length >= 2 ? addressParts.slice(1).join(' ') : fullAddress
-                    };
-                });
+                // 명칭은 Census 데이터에 이미 포함되어 있음
+                // 추가 처리 없이 그대로 반환
                 
                 return res.status(200).json({
                     metadata: {
                         sido: sidoName,
-                        total_regions: Object.keys(enrichedData).length,
+                        total_regions: Object.keys(sidoData).length,
                         years: censusData.metadata.years,
                         source: 'Census 데이터'
                     },
-                    regions: enrichedData
+                    regions: sidoData
                 });
             }
             
