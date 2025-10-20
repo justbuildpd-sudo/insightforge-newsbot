@@ -187,13 +187,23 @@ module.exports = (req, res) => {
                 }
             }
             
+            // 시도 코드 매핑 로드
+            const sidoCodeMapping = loadJsonFile('sido_code_mapping.json');
+            const reverseMapping = {};
+            if (sidoCodeMapping) {
+                Object.entries(sidoCodeMapping).forEach(([code, name]) => {
+                    reverseMapping[name] = 'sido' + code;
+                });
+            }
+            
             // 다른 시도는 national_comprehensive_data에서 필터링
             const nationalData = loadJsonFile('national_comprehensive_data.json');
             if (nationalData) {
+                const targetSidoCode = reverseMapping[sidoName] || sidoName;
                 const sidoData = {};
+                
                 Object.entries(nationalData).forEach(([code, item]) => {
-                    if (item.sido === sidoName || item.sido === sidoName + '특별시' || 
-                        item.sido === sidoName + '광역시' || item.sido === sidoName + '도') {
+                    if (item.sido === sidoName || item.sido === targetSidoCode) {
                         sidoData[code] = item;
                     }
                 });
