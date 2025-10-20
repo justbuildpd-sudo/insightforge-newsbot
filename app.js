@@ -121,15 +121,14 @@ function renderNationalList() {
     let html = '<div class="space-y-2">';
     
     allSido.forEach(sido => {
-        const sidoCode = sido.sido_cd || sido.code;
-        const sidoName = sido.sido_nm || sido.name;
-        const isExpanded = expandedSidos.has(sidoCode);
-        const popText = sido.total_population ? `${sido.total_population.toLocaleString()}명` : '-';
+        const sidoName = sido.name;
+        const isExpanded = expandedSidos.has(sidoName);
+        const regionCount = sido.region_count || 0;
         
         html += `
             <div>
                 <div class="font-semibold text-gray-900 px-3 py-2 bg-blue-50 rounded cursor-pointer hover:bg-blue-100 border border-blue-200 flex items-center justify-between"
-                     onclick='toggleSido("${sidoCode}")'>
+                     onclick='toggleSido("${sidoName}")'>
                     <div class="flex items-center gap-2">
                         <svg class="w-3 h-3 transform transition-transform ${isExpanded ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -137,11 +136,11 @@ function renderNationalList() {
                         <span class="text-sm font-bold">${sidoName}</span>
                     </div>
                     <div class="flex items-center gap-3 text-xs">
-                        <span class="text-gray-600">${sido.sigungu_count}개 시군구</span>
-                        <span class="text-blue-600 font-semibold">${popText}</span>
+                        <span class="text-gray-600">${regionCount}개 지역</span>
+                        <span class="text-blue-600 font-semibold cursor-pointer" onclick='event.stopPropagation(); selectSido("${sidoName}")'>상세보기</span>
                     </div>
                 </div>
-                ${isExpanded ? `<div id="sido-${sidoCode}" class="ml-4 mt-1"></div>` : ''}
+                ${isExpanded ? `<div id="sido-${encodeURIComponent(sidoName)}" class="ml-4 mt-1"></div>` : ''}
             </div>
         `;
     });
@@ -151,57 +150,98 @@ function renderNationalList() {
     console.log('✅ 렌더링 완료');
 }
 
-async function toggleSido(sidoCode) {
-    if (expandedSidos.has(sidoCode)) {
-        expandedSidos.delete(sidoCode);
+async function toggleSido(sidoName) {
+    if (expandedSidos.has(sidoName)) {
+        expandedSidos.delete(sidoName);
         renderNationalList();
     } else {
-        expandedSidos.add(sidoCode);
+        expandedSidos.add(sidoName);
         renderNationalList();
-        await loadSigunguList(sidoCode);
+        await loadSigunguList(sidoName);
     }
 }
 window.toggleSido = toggleSido;
 
-async function loadSigunguList(sidoCode) {
+async function selectSido(sidoName) {
+    console.log('🔍 시도 선택:', sidoName);
     try {
-        const response = await fetch(`${API_BASE}/api/national/sido/${sidoCode}`);
+        const response = await fetch(`${API_BASE}/api/sido/${encodeURIComponent(sidoName)}`);
         const data = await response.json();
         
-        const container = document.getElementById(`sido-${sidoCode}`);
-        if (!container) return;
+        // 시도 상세 정보 표시
+        const detailView = document.getElementById('detailView');
+        detailView.innerHTML = `
+            <div class="max-w-5xl">
+                <h2 class="text-3xl font-bold mb-6">${sidoName}</h2>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-bold mb-4">개요</h3>
+                    <p>총 ${data.metadata?.total_regions || 0}개 지역</p>
+                    <p>데이터 출처: ${data.metadata?.source || 'Census'}</p>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('❌ 시도 상세 로드 실패:', error);
+    }
+}
+window.selectSido = selectSido;
+
+async function loadSigunguList(sidoName) {
+    try {
+        const response = await fetch(`${API_BASE}/api/sido/${encodeURIComponent(sidoName)}`);
+        const data = await response.json();
+        
+        const container = document.getElementById(`sido-${encodeURIComponent(sidoName)}`);
+        if (!container) {
+            console.error('❌ Container not found:', `sido-${encodeURIComponent(sidoName)}`);
+            return;
+        }
         
         let html = '<div class="space-y-1">';
         
-        const sigunguList = data.sigungu_list || [];
-        
-        sigunguList.forEach(sigungu => {
-            const sigunguCode = sigungu.sigungu_code;
-            const sigunguName = sigungu.sigungu_name;
-            const emdongCount = sigungu.emdong_list ? sigungu.emdong_list.length : 0;
-            const isExpanded = expandedSigungus.has(sigunguCode);
-            const popText = sigungu.total_population ? `${sigungu.total_population.toLocaleString()}명` : '-';
+        // 서울은 regions에서 구 목록 추출
+        if (sidoName === '서울특별시' && data.regions) {
+            const guSet = new Set();
+            Object.keys(data.regions).forEach(key => {
+                const guName = key.split('_')[0];
+                guSet.add(guName);
+            });
             
-            html += `
-                <div class="ml-2">
-                    <div class="px-2 py-1.5 bg-white rounded border border-gray-200 flex items-center justify-between text-sm">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-2.5 h-2.5 transform transition-transform ${isExpanded ? 'rotate-90' : ''} cursor-pointer hover:text-blue-600" 
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                 onclick='toggleSigungu("${sigunguCode}")'>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                            <span class="cursor-pointer hover:text-blue-600" onclick='selectSigungu("${sigunguCode}")'>${sigunguName}</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="text-gray-500">${emdongCount}개</span>
-                            <span class="text-green-600">${popText}</span>
+            const guList = Array.from(guSet).sort();
+            guList.forEach(guName => {
+                html += `
+                    <div class="ml-2">
+                        <div class="px-2 py-1.5 bg-white rounded border border-gray-200 flex items-center justify-between text-sm cursor-pointer hover:bg-gray-50"
+                             onclick='selectSigungu("${guName}")'>
+                            <span>${guName}</span>
+                            <span class="text-blue-600 text-xs">상세보기</span>
                         </div>
                     </div>
-                    ${isExpanded ? `<div id="sigungu-${sigunguCode}" class="ml-3 mt-1"></div>` : ''}
-                </div>
-            `;
-        });
+                `;
+            });
+        } 
+        // 다른 시도는 regions에서 지역 코드 목록
+        else if (data.regions) {
+            const regions = Object.entries(data.regions).slice(0, 20); // 최대 20개만 표시
+            regions.forEach(([code, region]) => {
+                html += `
+                    <div class="ml-2">
+                        <div class="px-2 py-1.5 bg-white rounded border border-gray-200 flex items-center justify-between text-sm">
+                            <span>${code}</span>
+                            <span class="text-gray-500 text-xs">${region.population || '-'}명</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (Object.keys(data.regions).length > 20) {
+                html += `
+                    <div class="ml-2 px-2 py-1.5 text-xs text-gray-500">
+                        ... 외 ${Object.keys(data.regions).length - 20}개 지역
+                    </div>
+                `;
+            }
+        }
         
         html += '</div>';
         container.innerHTML = html;
@@ -241,30 +281,38 @@ async function toggleSigungu(sigunguCode) {
 }
 window.toggleSigungu = toggleSigungu;
 
-async function selectSigungu(sigunguCode) {
-    console.log('🔍 시군구 선택:', sigunguCode);
+async function selectSigungu(sigunguName) {
+    console.log('🔍 시군구 선택:', sigunguName);
     
     // 시군구 상세 정보 로드
     try {
-        const response = await fetch(`${API_BASE}/api/national/sigungu/${sigunguCode}/detail`);
+        const response = await fetch(`${API_BASE}/api/sigungu/${encodeURIComponent(sigunguName)}`);
         const data = await response.json();
         
         console.log('📦 시군구 상세 데이터:', data);
-        renderSigunguDetail(data);
         
-        // 시계열 그래프 먼저 렌더링 (정치인 정보는 나중에)
-        loadSigunguTimeseries(sigunguCode, []);
+        // 상세 정보 표시
+        const detailView = document.getElementById('detailView');
+        if (data.regions) {
+            const regionCount = Object.keys(data.regions).length;
+            detailView.innerHTML = `
+                <div class="max-w-5xl">
+                    <h2 class="text-3xl font-bold mb-6">${sigunguName}</h2>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-4">개요</h3>
+                        <p>총 ${regionCount}개 행정동</p>
+                    </div>
+                </div>
+            `;
+            
+            // 시계열 그래프 로드
+            loadSigunguTimeseries(sigunguName, []);
+        }
         
     } catch (error) {
         console.error('❌ 시군구 상세 정보 로드 실패:', error);
     }
-    
-    // 읍면동 목록도 확장
-    if (!expandedSigungus.has(sigunguCode)) {
-        await toggleSigungu(sigunguCode);
-    }
 }
-// 전역 등록
 window.selectSigungu = selectSigungu;
 
 async function loadEmdongList(sigunguCode) {
