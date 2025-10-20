@@ -1,6 +1,6 @@
 {
   "종로구": {
-    "name": "정문헌 (鄭文憲)",
+    "name": "정문헌",
     "party": "국민의힘",
     "district": "종로구",
     "position": "구청장",
@@ -15,7 +15,7 @@
     "email": null
   },
   "중구": {
-    "name": "김길성 (金桔城)",
+    "name": "김길성",
     "party": "국민의힘",
     "district": "중구",
     "position": "구청장",
@@ -30,7 +30,7 @@
     "email": null
   },
   "용산구": {
-    "name": "박희영 (朴熙英)",
+    "name": "박희영",
     "party": "국민의힘",
     "district": "용산구",
     "position": "구청장",
@@ -45,7 +45,7 @@
     "email": null
   },
   "성동구": {
-    "name": "정원오 (鄭愿伍)",
+    "name": "정원오",
     "party": "더불어민주당",
     "district": "성동구",
     "position": "구청장",
@@ -60,7 +60,7 @@
     "email": null
   },
   "광진구": {
-    "name": "김경호 (金炅鎬)",
+    "name": "김경호",
     "party": "국민의힘",
     "district": "광진구",
     "position": "구청장",
@@ -75,7 +75,7 @@
     "email": null
   },
   "동대문구": {
-    "name": "이필형 (李必炯)",
+    "name": "이필형",
     "party": "국민의힘",
     "district": "동대문구",
     "position": "구청장",
@@ -90,7 +90,7 @@
     "email": null
   },
   "중랑구": {
-    "name": "류경기 (柳炅基)",
+    "name": "류경기",
     "party": "더불어민주당",
     "district": "중랑구",
     "position": "구청장",
@@ -105,7 +105,7 @@
     "email": null
   },
   "성북구": {
-    "name": "이승로 (李承魯)",
+    "name": "이승로",
     "party": "더불어민주당",
     "district": "성북구",
     "position": "구청장",
@@ -120,7 +120,7 @@
     "email": null
   },
   "강북구": {
-    "name": "이순희 (李順熙)",
+    "name": "이순희",
     "party": "더불어민주당",
     "district": "강북구",
     "position": "구청장",
@@ -135,7 +135,7 @@
     "email": null
   },
   "도봉구": {
-    "name": "오언석 (吳彦錫)",
+    "name": "오언석",
     "party": "국민의힘",
     "district": "도봉구",
     "position": "구청장",
@@ -150,7 +150,7 @@
     "email": null
   },
   "노원구": {
-    "name": "오승록 (吳勝彔)",
+    "name": "오승록",
     "party": "더불어민주당",
     "district": "노원구",
     "position": "구청장",
@@ -165,7 +165,7 @@
     "email": null
   },
   "은평구": {
-    "name": "김미경 (金美京)",
+    "name": "김미경",
     "party": "더불어민주당",
     "district": "은평구",
     "position": "구청장",
@@ -180,7 +180,7 @@
     "email": null
   },
   "서대문구": {
-    "name": "이성헌 (李性憲)",
+    "name": "이성헌",
     "party": "국민의힘",
     "district": "서대문구",
     "position": "구청장",
@@ -195,7 +195,7 @@
     "email": null
   },
   "마포구": {
-    "name": "박강수 (朴康洙)",
+    "name": "박강수",
     "party": "국민의힘",
     "district": "마포구",
     "position": "구청장",
@@ -210,7 +210,7 @@
     "email": null
   },
   "양천구": {
-    "name": "이기재 (李屺宰)",
+    "name": "이기재",
     "party": "국민의힘",
     "district": "양천구",
     "position": "구청장",
@@ -225,7 +225,7 @@
     "email": null
   },
   "강서구": {
-    "name": "김태우 (金泰佑)",
+    "name": "김태우",
     "party": "국민의힘",
     "district": "강서구",
     "position": "구청장",
@@ -240,7 +240,7 @@
     "email": null
   },
   "구로구": {
-    "name": "문헌일 (文憲一)",
+    "name": "문헌일",
     "party": "국민의힘",
     "district": "구로구",
     "position": "구청장",
@@ -255,7 +255,7 @@
     "email": null
   },
   "금천구": {
-    "name": "유성훈 (柳成勳)",
+    "name": "유성훈",
     "party": "더불어민주당",
     "district": "금천구",
     "position": "구청장",
@@ -270,7 +270,7 @@
     "email": null
   },
   "영등포구": {
-    "name": "최호권 (崔鎬権)",
+    "name": "최호권",
     "party": "국민의힘",
     "district": "영등포구",
     "position": "구청장",
@@ -285,7 +285,7 @@
     "email": null
   },
   "동작구": {
-    "name": "박일하 (朴一河)",
+    "name": "박일하",
     "party": "국민의힘",
     "district": "동작구",
     "position": "구청장",
@@ -300,7 +300,7 @@
     "email": null
   },
   "관악구": {
-    "name": "박준희 (朴俊熙)",
+    "name": "박준희",
     "party": "더불어민주당",
     "district": "관악구",
     "position": "구청장",
@@ -315,7 +315,7 @@
     "email": null
   },
   "서초구": {
-    "name": "전성수 (全聖洙)",
+    "name": "전성수",
     "party": "국민의힘",
     "district": "서초구",
     "position": "구청장",
@@ -330,7 +330,7 @@
     "email": null
   },
   "강남구": {
-    "name": "조성명 (趙成明)",
+    "name": "조성명",
     "party": "국민의힘",
     "district": "강남구",
     "position": "구청장",
@@ -345,7 +345,7 @@
     "email": null
   },
   "송파구": {
-    "name": "서강석 (徐康錫)",
+    "name": "서강석",
     "party": "국민의힘",
     "district": "송파구",
     "position": "구청장",
@@ -360,7 +360,7 @@
     "email": null
   },
   "강동구": {
-    "name": "이수희 (李秀姬)",
+    "name": "이수희",
     "party": "국민의힘",
     "district": "강동구",
     "position": "구청장",
