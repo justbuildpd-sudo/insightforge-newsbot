@@ -11,12 +11,12 @@ from collections import defaultdict
 import sys
 
 try:
-    from konlpy.tag import Okt
+    from kiwipiepy import Kiwi
     from gensim import corpora, models
     import numpy as np
 except ImportError as e:
     print(f"❌ 필수 패키지 없음: {e}")
-    print("설치: pip install konlpy gensim numpy")
+    print("설치: pip install kiwipiepy gensim numpy")
     sys.exit(1)
 
 # 경로 설정
@@ -27,8 +27,8 @@ OUTPUT_DIR = BASE_DIR / 'output' / 'lda_results'
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# 한국어 형태소 분석기
-okt = Okt()
+# 한국어 형태소 분석기 (Kiwi - Java 불필요)
+kiwi = Kiwi()
 
 # 불용어 리스트
 STOPWORDS = set([
@@ -74,8 +74,15 @@ def extract_keywords(text, min_length=2):
     if not text:
         return []
     
-    # 형태소 분석
-    nouns = okt.nouns(text)
+    # 형태소 분석 (Kiwi 사용)
+    result = kiwi.analyze(text)
+    nouns = []
+    
+    if result and len(result) > 0:
+        for token, pos, _, _ in result[0][0]:
+            # 명사만 추출 (NNG: 일반명사, NNP: 고유명사)
+            if pos in ('NNG', 'NNP'):
+                nouns.append(token)
     
     # 필터링
     keywords = [

@@ -1,9 +1,10 @@
 version: '3.8'
 
 services:
-  newsanalyzer:
+  # 과거 데이터 수집 (2008-2025, 매일 자동)
+  newsanalyzer-historical:
     build: .
-    container_name: newsanalyzer
+    container_name: newsanalyzer-historical
     restart: unless-stopped
     
     volumes:
@@ -11,17 +12,36 @@ services:
       - ./data:/app/data
       - ./output:/app/output
       - ./logs:/app/logs
-      # InsightForge 데이터 연결 (업데이트용)
+    
+    environment:
+      - TZ=Asia/Seoul
+      - COLLECTION_MODE=historical
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID:-ULDLTGiPvrrPBgbuydSm}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET:-uO5mu7UQBg}
+    
+    networks:
+      - newsanalyzer-network
+  
+  # 일일 수집 및 LDA 분석 (현재 뉴스)
+  newsanalyzer-daily:
+    build: .
+    container_name: newsanalyzer-daily
+    restart: unless-stopped
+    
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
       - ../insightforge-web/data:/app/insightforge-data
     
     environment:
       - TZ=Asia/Seoul
-      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
-      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - COLLECTION_MODE=daily
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID:-ULDLTGiPvrrPBgbuydSm}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET:-uO5mu7UQBg}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - VERCEL_TOKEN=${VERCEL_TOKEN}
     
-    # 네트워크 (필요시)
     networks:
       - newsanalyzer-network
 
