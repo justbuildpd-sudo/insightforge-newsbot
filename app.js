@@ -294,17 +294,90 @@ async function selectSigungu(sigunguName) {
         
         console.log('📦 시군구 상세 데이터:', data);
         
+        // 뉴스, 키워드, 감사 데이터 로드
+        const [newsRes, keywordRes, auditRes] = await Promise.all([
+            fetch(`${API_BASE}/api/news/${encodeURIComponent(sigunguName)}`).then(r => r.json()).catch(() => ({})),
+            fetch(`${API_BASE}/api/keywords/${encodeURIComponent(sigunguName)}`).then(r => r.json()).catch(() => ({})),
+            fetch(`${API_BASE}/api/audit/${encodeURIComponent(sigunguName)}`).then(r => r.json()).catch(() => ({}))
+        ]);
+        
         // 상세 정보 표시
         const detailView = document.getElementById('detailView');
         if (data.regions) {
             const regionCount = Object.keys(data.regions).length;
+            const newsCount = newsRes.news ? newsRes.news.length : 0;
+            const keywordCount = keywordRes.keywords ? keywordRes.keywords.length : 0;
+            const auditCount = auditRes.keywords ? auditRes.keywords.length : 0;
+            
             detailView.innerHTML = `
                 <div class="max-w-5xl">
                     <h2 class="text-3xl font-bold mb-6">${sigunguName}</h2>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-xl font-bold mb-4">개요</h3>
-                        <p>총 ${regionCount}개 행정동</p>
+                    
+                    <!-- 개요 -->
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-500 text-white p-4 rounded-lg">
+                            <div class="text-sm opacity-90">행정동</div>
+                            <div class="text-2xl font-bold">${regionCount}개</div>
+                        </div>
+                        <div class="bg-green-500 text-white p-4 rounded-lg">
+                            <div class="text-sm opacity-90">뉴스</div>
+                            <div class="text-2xl font-bold">${newsCount}개</div>
+                        </div>
+                        <div class="bg-purple-500 text-white p-4 rounded-lg">
+                            <div class="text-sm opacity-90">키워드</div>
+                            <div class="text-2xl font-bold">${keywordCount}개</div>
+                        </div>
+                        <div class="bg-orange-500 text-white p-4 rounded-lg">
+                            <div class="text-sm opacity-90">감사</div>
+                            <div class="text-2xl font-bold">${auditCount}개</div>
+                        </div>
                     </div>
+                    
+                    <!-- 뉴스 -->
+                    ${newsCount > 0 ? `
+                    <div class="bg-white p-6 rounded-lg shadow mb-6">
+                        <h3 class="text-xl font-bold mb-4">📰 최근 뉴스</h3>
+                        <div class="space-y-3">
+                            ${newsRes.news.slice(0, 5).map(news => `
+                                <div class="border-b border-gray-200 pb-3">
+                                    <a href="${news.link}" target="_blank" class="text-blue-600 hover:underline font-semibold">
+                                        ${news.title}
+                                    </a>
+                                    <p class="text-sm text-gray-600 mt-1">${news.description ? news.description.substring(0, 150) + '...' : ''}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${news.pubDate || ''}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- 키워드 -->
+                    ${keywordCount > 0 ? `
+                    <div class="bg-white p-6 rounded-lg shadow mb-6">
+                        <h3 class="text-xl font-bold mb-4">🔑 주요 키워드</h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${keywordRes.keywords.slice(0, 20).map(kw => `
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                                    ${kw.keyword || kw} (${kw.count || ''})
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- 감사 키워드 -->
+                    ${auditCount > 0 ? `
+                    <div class="bg-white p-6 rounded-lg shadow mb-6">
+                        <h3 class="text-xl font-bold mb-4">🔍 감사 키워드</h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${auditRes.keywords.slice(0, 15).map(kw => `
+                                <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                                    ${kw.keyword || kw} (${kw.count || ''})
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
             
