@@ -10,6 +10,7 @@ from collections import defaultdict
 
 CENSUS_DIR = '/Users/hopidad/Desktop/workspace/census'
 OUTPUT_FILE = '/Users/hopidad/Desktop/workspace/insightforge-web/data/national_census_data.json'
+CODE_MAPPING_FILE = '/Users/hopidad/Desktop/workspace/insightforge-web/data/code_mapping.json'
 
 # 연도 목록
 YEARS = [2000, 2005, 2010, 2015, 2020]
@@ -85,6 +86,14 @@ def get_region_name_from_code(code):
 def convert_census_to_json():
     """Census 데이터를 JSON으로 변환"""
     
+    # code_mapping 로드
+    code_mapping = {}
+    if os.path.exists(CODE_MAPPING_FILE):
+        with open(CODE_MAPPING_FILE, 'r', encoding='utf-8') as f:
+            mapping_data = json.load(f)
+            code_mapping = mapping_data.get('mapping', {})
+        print(f"✅ code_mapping 로드: {len(code_mapping)}개")
+    
     national_data = {}
     
     for year in YEARS:
@@ -124,9 +133,17 @@ def convert_census_to_json():
         # 연도별 데이터 저장
         for region_code, region_data in year_data.items():
             if region_code not in national_data:
+                # code_mapping에서 명칭 찾기
+                mapping = code_mapping.get(region_code, {})
+                full_address = mapping.get('full_address', '')
+                address_parts = full_address.split(' ') if full_address else []
+                
                 national_data[region_code] = {
                     'code': region_code,
                     'sido': region_data['sido'],
+                    'full_address': full_address,
+                    'sigungu_name': ' '.join(address_parts[1:3]) if len(address_parts) >= 2 else region_code,
+                    'emdong_name': ' '.join(address_parts[2:]) if len(address_parts) >= 3 else '',
                     'history': {}
                 }
             national_data[region_code]['history'][str(year)] = {
