@@ -856,7 +856,7 @@
         "male_ratio": 46.7,
         "female_ratio": 53.3,
         "avg_household_size": 1.91,
-        "population_growth_rate": NaN
+        "population_growth_rate": null
       }
     },
     "용산구_이촌1동": {
