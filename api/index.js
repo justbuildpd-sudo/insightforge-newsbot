@@ -65,11 +65,14 @@ module.exports = (req, res) => {
     try {
         // Debug endpoint
         if (url.match(/\/api\/debug/)) {
+            const allFiles = fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR) : [];
             return res.status(200).json({
                 cwd: process.cwd(),
                 dataDir: DATA_DIR,
                 dataDirExists: fs.existsSync(DATA_DIR),
-                files: fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR).slice(0, 10) : []
+                totalFiles: allFiles.length,
+                files: allFiles,
+                seoulExists: fs.existsSync(path.join(DATA_DIR, 'seoul_final_data.json'))
             });
         }
         
