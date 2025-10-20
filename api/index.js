@@ -133,6 +133,28 @@ module.exports = (req, res) => {
             return res.status(200).json(data || {});
         }
         
+        // /api/election/previous - 역사적 선거 데이터
+        if (url.match(/\/api\/election\/previous$/)) {
+            const data = loadJsonFile('previous_election_data_complete.json');
+            return res.status(200).json(data || {});
+        }
+        
+        // /api/election/previous/<region> - 지역별 역사적 선거
+        const prevElectionMatch = url.match(/\/api\/election\/previous\/([^/]+)/);
+        if (prevElectionMatch) {
+            const region = decodeURIComponent(prevElectionMatch[1]);
+            const data = loadJsonFile('previous_election_data_complete.json');
+            
+            if (data && data[region]) {
+                return res.status(200).json({
+                    region: region,
+                    elections: data[region]
+                });
+            }
+            
+            return res.status(404).json({ error: 'Previous election data not found', region: region });
+        }
+        
         // /api/population/yearly
         if (url.match(/\/api\/population\/yearly$/)) {
             const data = loadJsonFile('population_yearly_data.json');
