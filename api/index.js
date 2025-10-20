@@ -173,9 +173,13 @@ module.exports = (req, res) => {
             const filename = sidoName === 'seoul' || sidoName === '서울' 
                 ? 'seoul_final_data.json' 
                 : `${sidoName}_comprehensive_data.json`;
-            console.log('Loading sido file:', filename);
+            
+            // 디버깅: 파일 경로 확인
+            const filePath = path.join(DATA_DIR, filename);
+            const fileExists = fs.existsSync(filePath);
+            
             const data = loadJsonFile(filename);
-            console.log('Data loaded:', data ? 'yes' : 'no', data ? Object.keys(data) : []);
+            
             if (data && data.regions) {
                 // seoul_final_data.json 형식
                 return res.status(200).json(data);
@@ -183,10 +187,15 @@ module.exports = (req, res) => {
                 // 기타 데이터 형식
                 return res.status(200).json(data);
             }
+            
             return res.status(404).json({ 
                 error: 'Sido not found',
                 filename: filename,
-                dataLoaded: !!data
+                filePath: filePath,
+                fileExists: fileExists,
+                dataLoaded: !!data,
+                dataKeys: data ? Object.keys(data) : null,
+                cacheKeys: Object.keys(dataCache)
             });
         }
         
