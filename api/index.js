@@ -242,9 +242,10 @@ module.exports = (req, res) => {
                 const sidoData = censusData.by_sido[sidoName];
                 
                 // 코드에 명칭 매핑 추가
+                const mappingData = codeMapping?.mapping || {};
                 const enrichedData = {};
                 Object.entries(sidoData).forEach(([code, data]) => {
-                    const mapping = codeMapping && codeMapping[code];
+                    const mapping = mappingData[code];
                     enrichedData[code] = {
                         ...data,
                         name: mapping?.full_address || code,
