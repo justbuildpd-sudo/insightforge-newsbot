@@ -147,31 +147,40 @@ module.exports = (req, res) => {
         // /api/national/sido
         if (url.match(/\/api\/national\/sido/)) {
             const sidoList = loadJsonFile('sido_sigungu_list.json');
+            const nationalData = loadJsonFile('national_comprehensive_data.json');
+            
+            // 실제 데이터가 있는 시도만 포함
+            const sidoWithData = {};
+            if (nationalData) {
+                Object.values(nationalData).forEach(item => {
+                    if (item.sido && !sidoWithData[item.sido]) {
+                        sidoWithData[item.sido] = {
+                            name: item.sido,
+                            code: item.sido_code,
+                            count: 0
+                        };
+                    }
+                    if (item.sido) {
+                        sidoWithData[item.sido].count++;
+                    }
+                });
+            }
+            
             if (sidoList) {
-                // 시도 목록을 배열로 변환
-                const result = Object.keys(sidoList).map(sido => ({
-                    name: sido,
-                    sigungu_count: sidoList[sido].length,
-                    sigungu_list: sidoList[sido]
-                }));
+                // 시도 목록을 배열로 변환하되, 데이터가 있는 것만
+                const result = Object.keys(sidoList)
+                    .filter(sido => sidoWithData[sido] || sido === '서울특별시')
+                    .map(sido => ({
+                        name: sido,
+                        sigungu_count: sidoList[sido].length,
+                        sigungu_list: sidoList[sido],
+                        hasData: !!sidoWithData[sido] || sido === '서울특별시'
+                    }));
                 return res.status(200).json(result);
             }
             
-            // fallback: national_comprehensive_data.json 사용
-            const data = loadJsonFile('national_comprehensive_data.json');
-            if (data) {
-                const sidoMap = {};
-                Object.values(data).forEach(item => {
-                    if (item.sido && !sidoMap[item.sido]) {
-                        sidoMap[item.sido] = {
-                            name: item.sido,
-                            code: item.sido_code
-                        };
-                    }
-                });
-                return res.status(200).json(Object.values(sidoMap));
-            }
-            return res.status(200).json([]);
+            // fallback
+            return res.status(200).json(Object.values(sidoWithData));
         }
         
         // /api/sido/<sido_name>
