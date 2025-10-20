@@ -331,6 +331,72 @@ module.exports = (req, res) => {
             });
         }
         
+        // /api/politician/<name>/lda - 정치인 LDA 분석
+        const politicianLDAMatch = url.match(/\/api\/politician\/([^/]+)\/lda/);
+        if (politicianLDAMatch) {
+            const politicianName = decodeURIComponent(politicianLDAMatch[1]);
+            
+            // 국회의원 LDA 데이터 확인
+            const assemblyLDA = loadJsonFile('assembly_member_lda_analysis.json');
+            if (assemblyLDA && assemblyLDA[politicianName]) {
+                return res.status(200).json({
+                    type: 'assembly',
+                    data: assemblyLDA[politicianName]
+                });
+            }
+            
+            // 지방정치인 LDA 데이터 확인
+            const localLDA = loadJsonFile('local_politicians_lda_analysis.json');
+            if (localLDA && localLDA[politicianName]) {
+                return res.status(200).json({
+                    type: 'local',
+                    data: localLDA[politicianName]
+                });
+            }
+            
+            return res.status(404).json({ 
+                error: 'Politician LDA data not found',
+                name: politicianName
+            });
+        }
+        
+        // /api/lda/assembly - 모든 국회의원 LDA 목록
+        if (url.match(/\/api\/lda\/assembly/)) {
+            const assemblyLDA = loadJsonFile('assembly_member_lda_analysis.json');
+            if (assemblyLDA) {
+                // 요약 정보만 반환 (전체는 너무 큼)
+                const summary = Object.keys(assemblyLDA).map(name => ({
+                    name: name,
+                    party: assemblyLDA[name].member_info?.party,
+                    district: assemblyLDA[name].member_info?.district,
+                    total_count: assemblyLDA[name].total_count
+                }));
+                return res.status(200).json({
+                    total: summary.length,
+                    politicians: summary
+                });
+            }
+            return res.status(200).json({ total: 0, politicians: [] });
+        }
+        
+        // /api/lda/local - 모든 지방정치인 LDA 목록
+        if (url.match(/\/api\/lda\/local/)) {
+            const localLDA = loadJsonFile('local_politicians_lda_analysis.json');
+            if (localLDA) {
+                const summary = Object.keys(localLDA).map(name => ({
+                    name: name,
+                    party: localLDA[name].member_info?.party,
+                    district: localLDA[name].member_info?.district,
+                    total_count: localLDA[name].total_count
+                }));
+                return res.status(200).json({
+                    total: summary.length,
+                    politicians: summary
+                });
+            }
+            return res.status(200).json({ total: 0, politicians: [] });
+        }
+        
         // /api/search
         if (url.match(/\/api\/search/)) {
             return res.status(200).json({ results: [] });
@@ -345,7 +411,10 @@ module.exports = (req, res) => {
                 '/api/national/sido',
                 '/api/sido/<name>',
                 '/api/politicians/*',
-                '/api/population/*'
+                '/api/population/*',
+                '/api/politician/<name>/lda',
+                '/api/lda/assembly',
+                '/api/lda/local'
             ]
         });
         
