@@ -410,6 +410,51 @@ module.exports = (req, res) => {
             });
         }
         
+        // /api/assembly/current - 현직 국회의원 목록 (국회 OpenAPI)
+        if (url.match(/\/api\/assembly\/current/)) {
+            const currentMembers = loadJsonFile('national_assembly_members_current.json');
+            if (currentMembers) {
+                const summary = Object.keys(currentMembers).map(name => {
+                    const member = currentMembers[name];
+                    return {
+                        name: name,
+                        code: member.member_info.code,
+                        party: member.member_info.party,
+                        district: member.member_info.district,
+                        committee: member.member_info.affiliated_committee || member.member_info.committee,
+                        term: member.member_info.term,
+                        reelection: member.member_info.reelection,
+                        tel: member.contact.tel,
+                        email: member.contact.email,
+                        photo_url: member.profile.photo_url
+                    };
+                });
+                return res.status(200).json({
+                    total: summary.length,
+                    members: summary,
+                    last_updated: new Date().toISOString(),
+                    data_source: 'National Assembly OpenAPI'
+                });
+            }
+            return res.status(200).json({ total: 0, members: [] });
+        }
+        
+        // /api/assembly/member/<name> - 특정 국회의원 상세 정보
+        const assemblyMemberMatch = url.match(/\/api\/assembly\/member\/([^/]+)/);
+        if (assemblyMemberMatch) {
+            const memberName = decodeURIComponent(assemblyMemberMatch[1]);
+            const currentMembers = loadJsonFile('national_assembly_members_current.json');
+            
+            if (currentMembers && currentMembers[memberName]) {
+                return res.status(200).json(currentMembers[memberName]);
+            }
+            
+            return res.status(404).json({ 
+                error: 'Member not found',
+                name: memberName
+            });
+        }
+        
         // /api/lda/assembly - 모든 국회의원 LDA 목록
         if (url.match(/\/api\/lda\/assembly/)) {
             const assemblyLDA = loadJsonFile('assembly_member_lda_analysis.json');
