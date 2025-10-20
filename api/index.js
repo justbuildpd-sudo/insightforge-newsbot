@@ -70,6 +70,19 @@ export default async (req, res) => {
     
     const { url } = req;
     console.log('📥 Request:', url);
+    console.log('📁 DATA_DIR:', DATA_DIR);
+    console.log('📁 DATA_DIR exists:', fs.existsSync(DATA_DIR));
+    console.log('📁 cwd:', process.cwd());
+    
+    // Debug endpoint
+    if (url.match(/\/api\/debug/)) {
+        return res.status(200).json({
+            cwd: process.cwd(),
+            dataDir: DATA_DIR,
+            dataDirExists: fs.existsSync(DATA_DIR),
+            files: fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR).slice(0, 10) : []
+        });
+    }
     
     try {
         // /api/politicians/si_uiwon
