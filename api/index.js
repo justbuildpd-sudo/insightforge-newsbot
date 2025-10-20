@@ -8,45 +8,42 @@ const DATA_DIR = path.join(process.cwd(), 'insightforge-web', 'data');
 // 캐시
 const dataCache = {};
 
+// 에러 저장용
+const loadErrors = {};
+
 // JSON 파일 로드 (gzip 지원)
 function loadJsonFile(filename) {
-    console.log('loadJsonFile called:', filename);
-    
     if (dataCache[filename]) {
-        console.log('Returned from cache:', filename);
         return dataCache[filename];
     }
     
     try {
         // 일반 파일 먼저 시도
         const filePath = path.join(DATA_DIR, filename);
-        console.log('Trying file path:', filePath);
-        console.log('File exists:', fs.existsSync(filePath));
         
         if (fs.existsSync(filePath)) {
             const fileContent = fs.readFileSync(filePath, 'utf-8');
-            console.log('File read, length:', fileContent.length);
             const data = JSON.parse(fileContent);
-            console.log('JSON parsed, keys:', Object.keys(data));
             dataCache[filename] = data;
+            delete loadErrors[filename]; // 성공 시 에러 제거
             return data;
         }
         
         // gzip 파일 시도
         const gzPath = path.join(DATA_DIR, filename + '.gz');
-        console.log('Trying gz path:', gzPath);
         if (fs.existsSync(gzPath)) {
             const compressed = fs.readFileSync(gzPath);
             const decompressed = zlib.gunzipSync(compressed);
             const data = JSON.parse(decompressed.toString('utf-8'));
             dataCache[filename] = data;
+            delete loadErrors[filename];
             return data;
         }
         
-        console.error(`File not found: ${filename}`);
+        loadErrors[filename] = 'File not found';
         return null;
     } catch (error) {
-        console.error(`Error loading ${filename}:`, error.message, error.stack);
+        loadErrors[filename] = `${error.name}: ${error.message}`;
         return null;
     }
 }
@@ -195,7 +192,8 @@ module.exports = (req, res) => {
                 fileExists: fileExists,
                 dataLoaded: !!data,
                 dataKeys: data ? Object.keys(data) : null,
-                cacheKeys: Object.keys(dataCache)
+                cacheKeys: Object.keys(dataCache),
+                loadError: loadErrors[filename] || 'Unknown'
             });
         }
         
