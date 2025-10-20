@@ -564,9 +564,10 @@ def search():
     # 간단한 검색 구현
     return jsonify({"results": []})
 
-# Vercel serverless function handler
-handler = app
-
+# For local development
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
+
+# Vercel uses the 'app' object directly
+# No need for additional handler
 
