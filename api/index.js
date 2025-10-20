@@ -140,8 +140,18 @@ module.exports = (req, res) => {
         // /api/national/sido
         if (url.match(/\/api\/national\/sido/)) {
             const data = loadJsonFile('national_comprehensive_data.json');
-            if (data && data.sido_list) {
-                return res.status(200).json(data.sido_list);
+            if (data) {
+                // 지역 코드로 키가 되어 있는 구조를 배열로 변환
+                const sidoMap = {};
+                Object.values(data).forEach(item => {
+                    if (item.sido && !sidoMap[item.sido]) {
+                        sidoMap[item.sido] = {
+                            name: item.sido,
+                            code: item.sido_code
+                        };
+                    }
+                });
+                return res.status(200).json(Object.values(sidoMap));
             }
             return res.status(200).json([]);
         }
@@ -154,7 +164,14 @@ module.exports = (req, res) => {
                 ? 'seoul_final_data.json' 
                 : `${sidoName}_comprehensive_data.json`;
             const data = loadJsonFile(filename);
-            return res.status(200).json(data || {});
+            if (data && data.regions) {
+                // seoul_final_data.json 형식
+                return res.status(200).json(data);
+            } else if (data) {
+                // 기타 데이터 형식
+                return res.status(200).json(data);
+            }
+            return res.status(404).json({ error: 'Sido not found' });
         }
         
         // /api/sigungu/<sigungu_name>
@@ -162,10 +179,19 @@ module.exports = (req, res) => {
         if (sigunguMatch) {
             const sigunguName = decodeURIComponent(sigunguMatch[1]);
             const seoulData = loadJsonFile('seoul_final_data.json');
-            if (seoulData && seoulData.sigungu_list) {
-                const sigungu = seoulData.sigungu_list.find(s => s.sigunguName === sigunguName);
-                if (sigungu) {
-                    return res.status(200).json(sigungu);
+            if (seoulData && seoulData.regions) {
+                // regions에서 구 단위 데이터 추출
+                const sigunguData = {};
+                Object.entries(seoulData.regions).forEach(([key, value]) => {
+                    if (key.startsWith(sigunguName + '_')) {
+                        sigunguData[key] = value;
+                    }
+                });
+                if (Object.keys(sigunguData).length > 0) {
+                    return res.status(200).json({
+                        sigunguName: sigunguName,
+                        regions: sigunguData
+                    });
                 }
             }
             return res.status(404).json({ error: 'Sigungu not found' });
@@ -177,13 +203,10 @@ module.exports = (req, res) => {
             const sigunguName = decodeURIComponent(emdongMatch[1]);
             const emdongName = decodeURIComponent(emdongMatch[2]);
             const seoulData = loadJsonFile('seoul_final_data.json');
-            if (seoulData && seoulData.sigungu_list) {
-                const sigungu = seoulData.sigungu_list.find(s => s.sigunguName === sigunguName);
-                if (sigungu && sigungu.emdong_list) {
-                    const emdong = sigungu.emdong_list.find(e => e.emdongName === emdongName);
-                    if (emdong) {
-                        return res.status(200).json(emdong);
-                    }
+            if (seoulData && seoulData.regions) {
+                const key = `${sigunguName}_${emdongName}`;
+                if (seoulData.regions[key]) {
+                    return res.status(200).json(seoulData.regions[key]);
                 }
             }
             return res.status(404).json({ error: 'Emdong not found' });
