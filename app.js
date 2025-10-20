@@ -220,24 +220,27 @@ async function loadSigunguList(sidoName) {
                 `;
             });
         } 
-        // 다른 시도는 regions에서 지역 코드 목록
+        // 다른 시도는 regions에서 지역 목록 (명칭 표시)
         else if (data.regions) {
-            const regions = Object.entries(data.regions).slice(0, 20); // 최대 20개만 표시
+            const regions = Object.entries(data.regions).slice(0, 30); // 최대 30개 표시
             regions.forEach(([code, region]) => {
+                const displayName = region.sigungu_name || region.name || code;
+                const population = region.population || 0;
+                
                 html += `
                     <div class="ml-2">
-                        <div class="px-2 py-1.5 bg-white rounded border border-gray-200 flex items-center justify-between text-sm">
-                            <span>${code}</span>
-                            <span class="text-gray-500 text-xs">${region.population || '-'}명</span>
+                        <div class="px-2 py-1.5 bg-white rounded border border-gray-200 flex items-center justify-between text-sm hover:bg-gray-50 cursor-pointer">
+                            <span class="text-gray-800">${displayName}</span>
+                            <span class="text-gray-500 text-xs">${population ? population.toLocaleString() + '명' : '-'}</span>
                         </div>
                     </div>
                 `;
             });
             
-            if (Object.keys(data.regions).length > 20) {
+            if (Object.keys(data.regions).length > 30) {
                 html += `
-                    <div class="ml-2 px-2 py-1.5 text-xs text-gray-500">
-                        ... 외 ${Object.keys(data.regions).length - 20}개 지역
+                    <div class="ml-2 px-2 py-1.5 text-xs text-gray-500 text-center bg-gray-50 rounded">
+                        ... 외 ${Object.keys(data.regions).length - 30}개 지역
                     </div>
                 `;
             }

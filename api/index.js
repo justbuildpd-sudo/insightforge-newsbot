@@ -236,17 +236,30 @@ module.exports = (req, res) => {
             
             // Census 데이터에서 시도별 데이터 추출
             const censusData = loadJsonFile('national_census_data.json');
+            const codeMapping = loadJsonFile('code_mapping.json');
+            
             if (censusData && censusData.by_sido && censusData.by_sido[sidoName]) {
                 const sidoData = censusData.by_sido[sidoName];
+                
+                // 코드에 명칭 매핑 추가
+                const enrichedData = {};
+                Object.entries(sidoData).forEach(([code, data]) => {
+                    const mapping = codeMapping && codeMapping[code];
+                    enrichedData[code] = {
+                        ...data,
+                        name: mapping?.full_address || code,
+                        sigungu_name: mapping?.full_address ? mapping.full_address.split(' ').slice(1, 3).join(' ') : code
+                    };
+                });
                 
                 return res.status(200).json({
                     metadata: {
                         sido: sidoName,
-                        total_regions: Object.keys(sidoData).length,
+                        total_regions: Object.keys(enrichedData).length,
                         years: censusData.metadata.years,
                         source: 'Census 데이터'
                     },
-                    regions: sidoData
+                    regions: enrichedData
                 });
             }
             
