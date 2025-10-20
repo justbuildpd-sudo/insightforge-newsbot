@@ -115,6 +115,24 @@ module.exports = (req, res) => {
             return res.status(200).json(data || []);
         }
         
+        // /api/politicians/gu_mayor - 구청장 정보
+        if (url.match(/\/api\/politicians\/gu_mayor/)) {
+            const data = loadJsonFile('seoul_gu_mayor_8th.json');
+            return res.status(200).json(data || {});
+        }
+        
+        // /api/politicians/mayor - 시장 정보
+        if (url.match(/\/api\/politicians\/mayor/)) {
+            const data = loadJsonFile('seoul_mayor_8th.json');
+            return res.status(200).json(data || {});
+        }
+        
+        // /api/politicians/assembly_by_region - 지역구/비례대표 구분
+        if (url.match(/\/api\/politicians\/assembly_by_region/)) {
+            const data = loadJsonFile('assembly_by_region.json');
+            return res.status(200).json(data || {});
+        }
+        
         // /api/population/yearly
         if (url.match(/\/api\/population\/yearly$/)) {
             const data = loadJsonFile('population_yearly_data.json');
