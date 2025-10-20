@@ -944,14 +944,23 @@ async function selectSigungu(sigunguCode) {
         const response = await fetch(`${API_BASE}/api/national/sigungu/${sigunguCode}/detail`);
         const data = await response.json();
         
-        renderSigunguDetail(data);
+        // 국회의원 정보도 함께 로드
+        const assemblyResponse = await fetch(`${API_BASE}/api/assembly/current`);
+        const assemblyData = await assemblyResponse.json();
+        
+        // 해당 지역구 국회의원 필터링
+        const localMembers = assemblyData.members ? assemblyData.members.filter(m => 
+            m.district && m.district.includes(data.sigungu_name || data.commercial?.sigungu_name || '')
+        ) : [];
+        
+        renderSigunguDetail(data, localMembers);
         
     } catch (error) {
         console.error('❌ 시군구 상세 정보 로드 실패:', error);
     }
 }
 
-function renderSigunguDetail(data) {
+function renderSigunguDetail(data, assemblyMembers = []) {
     const detailView = document.getElementById('detailView');
     
     const commercial = data.commercial || {};
@@ -969,6 +978,57 @@ function renderSigunguDetail(data) {
                 <h2 class="text-3xl font-bold text-gray-900">${commercial.sido_name || ''} ${commercial.sigungu_name || ''}</h2>
                 <p class="text-gray-600 mt-1">시군구 코드: ${data.sigungu_code}</p>
             </div>
+            
+            <!-- 국회의원 정보 -->
+            ${assemblyMembers.length > 0 ? `
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg shadow border border-blue-200 mb-6">
+                <h3 class="font-bold text-lg mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    국회의원 (제22대 국회)
+                </h3>
+                <div class="grid gap-4">
+                    ${assemblyMembers.map(member => `
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-start gap-4">
+                            ${member.photo_url ? `
+                                <img src="${member.photo_url}" alt="${member.name}" 
+                                     class="w-16 h-20 object-cover rounded border border-gray-300"
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2280%22%3E%3Crect fill=%22%23e5e7eb%22 width=%2264%22 height=%2280%22/%3E%3Ctext x=%2232%22 y=%2245%22 text-anchor=%22middle%22 fill=%22%236b7280%22 font-size=%2224%22%3E의원%3C/text%3E%3C/svg%3E'">
+                            ` : `
+                                <div class="w-16 h-20 bg-gray-200 rounded border border-gray-300 flex items-center justify-center text-gray-500 text-xs">
+                                    사진없음
+                                </div>
+                            `}
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="font-bold text-lg text-gray-900">${member.name}</span>
+                                    <span class="px-2 py-0.5 text-xs rounded-full ${
+                                        member.party?.includes('더불어민주당') ? 'bg-blue-100 text-blue-700' :
+                                        member.party?.includes('국민의힘') ? 'bg-red-100 text-red-700' :
+                                        member.party?.includes('조국혁신당') ? 'bg-yellow-100 text-yellow-700' :
+                                        member.party?.includes('국민의미래') ? 'bg-purple-100 text-purple-700' :
+                                        'bg-gray-100 text-gray-700'
+                                    }">${member.party || '-'}</span>
+                                    ${member.reelection ? `<span class="text-xs text-gray-500">${member.reelection}</span>` : ''}
+                                </div>
+                                <div class="text-sm text-gray-600 mb-2">
+                                    <div class="flex items-center gap-3">
+                                        <span>📍 ${member.district || '-'}</span>
+                                        ${member.term ? `<span class="text-xs text-gray-500">${member.term}</span>` : ''}
+                                    </div>
+                                    ${member.committee ? `<div class="mt-1 text-xs">🏛️ ${member.committee}</div>` : ''}
+                                </div>
+                                <div class="flex gap-3 text-xs text-gray-500">
+                                    ${member.tel ? `<span>☎️ ${member.tel}</span>` : ''}
+                                    ${member.email ? `<span>✉️ ${member.email}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
             
             <!-- 주요 통계 카드 -->
             <div class="grid grid-cols-4 gap-4 mb-6">
