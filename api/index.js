@@ -241,16 +241,38 @@ module.exports = (req, res) => {
             if (censusData && censusData.by_sido && censusData.by_sido[sidoName]) {
                 const sidoData = censusData.by_sido[sidoName];
                 
-                // 명칭은 Census 데이터에 이미 포함되어 있음
-                // 추가 처리 없이 그대로 반환
+                // Object를 Array로 변환하고, 시군구별로 그룹화
+                const sigunguMap = {};
+                Object.entries(sidoData).forEach(([code, regionData]) => {
+                    const sigunguName = regionData.sigungu_name || '미분류';
+                    if (!sigunguMap[sigunguName]) {
+                        sigunguMap[sigunguName] = {
+                            sigungu_name: sigunguName,
+                            sigungu_code: code.substring(0, 5) + '00000', // 시군구 코드
+                            emdongs: [],
+                            total_population: 0
+                        };
+                    }
+                    sigunguMap[sigunguName].emdongs.push(regionData);
+                    sigunguMap[sigunguName].total_population += regionData.population || 0;
+                });
+                
+                // 시군구 목록 배열로 변환
+                const sigunguList = Object.values(sigunguMap).map(sigungu => ({
+                    sigungu_name: sigungu.sigungu_name,
+                    sigungu_code: sigungu.sigungu_code,
+                    emdong_count: sigungu.emdongs.length,
+                    total_population: sigungu.total_population
+                }));
                 
                 return res.status(200).json({
                     metadata: {
                         sido: sidoName,
                         total_regions: Object.keys(sidoData).length,
-                        years: censusData.metadata.years,
+                        years: censusData.metadata?.years || [],
                         source: 'Census 데이터'
                     },
+                    sigungu_list: sigunguList,
                     regions: sidoData
                 });
             }

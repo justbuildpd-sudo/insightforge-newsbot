@@ -208,10 +208,64 @@ async function toggleSigungu(sigunguCode) {
         if (sido) await loadSigunguList(sido.code);
     } else {
         expandedSigungus.add(sigunguCode);
-        // 부모 시도 다시 로드
+        // 부모 시도 다시 로드 (화살표 회전)
         const sido = allSido.find(s => expandedSidos.has(s.code));
         if (sido) await loadSigunguList(sido.code);
+        // 동 단위 데이터 로드
         await loadEmdongList(sigunguCode);
+    }
+}
+
+async function loadEmdongList(sigunguCode) {
+    try {
+        // 현재 선택된 시도 찾기
+        const currentSido = allSido.find(s => expandedSidos.has(s.code));
+        if (!currentSido) return;
+        
+        // 시도 데이터 다시 가져오기
+        const response = await fetch(`${API_BASE}/api/sido/${currentSido.name}`);
+        const data = await response.json();
+        
+        if (!data.regions) return;
+        
+        // regions를 배열로 변환
+        const regionsArray = Object.entries(data.regions).map(([code, regionData]) => ({
+            code: code,
+            ...regionData
+        }));
+        
+        // 해당 시군구의 동 목록 필터링
+        const emdongList = regionsArray.filter(region => {
+            return region.sigungu_name && region.code.substring(0, 5) === sigunguCode.substring(0, 5);
+        }).sort((a, b) => (a.emdong_name || '').localeCompare(b.emdong_name || ''));
+        
+        // 컨테이너 찾기
+        const container = document.getElementById(`sigungu-${sigunguCode}`);
+        if (!container) return;
+        
+        // HTML 생성
+        let html = '<div class="space-y-0.5 mt-1">';
+        emdongList.forEach(emdong => {
+            const pop = emdong.population || 0;
+            const popText = pop > 0 ? `${(pop / 1000).toFixed(1)}천` : '-';
+            const displayName = [emdong.sigungu_name, emdong.emdong_name].filter(x => x && x !== '계').join(' ');
+            
+            html += `
+                <div class="p-2 hover:bg-blue-50 rounded cursor-pointer border border-gray-100 text-sm transition-colors"
+                     onclick='selectRegion("${emdong.code}")'>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700">${displayName}</span>
+                        <span class="text-xs text-gray-500">${popText}</span>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ 동 목록 로드 실패:', error);
     }
 }
 
