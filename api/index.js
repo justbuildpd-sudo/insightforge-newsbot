@@ -235,6 +235,8 @@ module.exports = (req, res) => {
             }
             
             // Census 데이터에서 시도별 데이터 추출
+            // 캐시 무효화를 위해 다시 로드
+            delete dataCache['national_census_data.json'];
             const censusData = loadJsonFile('national_census_data.json');
             const codeMapping = loadJsonFile('code_mapping.json');
             
