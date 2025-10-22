@@ -1392,12 +1392,14 @@ function renderSeoulGus(regions) {
                     ${guRegions.map(region => {
                         const pop = region.population || 0;
                         const popText = pop > 0 ? `${(pop / 1000).toFixed(1)}천` : '-';
+                        // 시군구명과 동명을 합쳐서 표시
+                        const displayName = [region.sigungu_name, region.dong_name].filter(x => x && x !== '계').join(' ');
                         
                         return `
                             <div class="p-2 hover:bg-blue-50 rounded cursor-pointer border border-gray-100 text-sm transition-colors"
                                  onclick='selectRegion("${region.code}")'>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-700">${region.dong || region.name}</span>
+                                    <span class="text-gray-700">${displayName || region.dong || region.name}</span>
                                     <span class="text-xs text-gray-500">${popText}</span>
                                 </div>
                             </div>
