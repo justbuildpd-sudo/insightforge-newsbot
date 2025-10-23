@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컨텍스트 - 정치에 대한 데이터의 편견</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .logo-text {
+            font-family: 'Arial Black', sans-serif;
+            font-weight: 900;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .company-card {
+            transition: all 0.3s ease;
+        }
+        .company-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .login-form {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 네비게이션 -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <div class="text-2xl font-bold text-gray-800">컨텍스트</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="loginBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        로그인
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero-gradient min-h-screen flex items-center">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="text-center fade-in">
+                <!-- 회사 로고 -->
+                <div class="mb-8">
+                    <div class="inline-block bg-white p-8 rounded-2xl shadow-2xl">
+                        <div class="text-6xl font-black text-gray-800 mb-2 logo-text">INSIGHT FORCE</div>
+                        <div class="text-lg text-gray-600 font-medium">DATA STUDIO</div>
+                        <div class="text-sm text-gray-500 mt-1">ESTD 2025. YECUIDO</div>
+                    </div>
+                </div>
+
+                <!-- 회사 소개 -->
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                    컨텍스트
+                </h1>
+                <p class="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto">
+                    정치에 대한 데이터의 편견
+                </p>
+                <p class="text-lg text-white/80 mb-12 max-w-2xl mx-auto">
+                    데이터를 통해 정치의 진실을 찾아갑니다.
+                </p>
+
+                <!-- CTA 버튼 -->
+                <div class="space-x-4">
+                    <button id="learnMoreBtn" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                        더 알아보기
+                    </button>
+                    <button id="contactBtn" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
+                        문의하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 회사 소개 섹션 -->
+    <section id="aboutSection" class="py-20 bg-white hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">회사 소개</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    컨텍스트는 '정치에 대한 데이터의 편견'을 모토로 하는 데이터 스튜디오입니다.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="company-card bg-blue-50 p-8 rounded-xl">
+                    <div class="text-4xl mb-4">📊</div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">데이터 분석</h3>
+                    <p class="text-gray-600">
+                        정치인들의 발언과 정책을 LDA 토픽 모델링을 통해 분석합니다.
+                    </p>
+                </div>
+
+                <div class="company-card bg-green-50 p-8 rounded-xl">
+                    <div class="text-4xl mb-4">🎯</div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">선거에서 이기는 법</h3>
+                    <p class="text-gray-600">
+                        선거에서 이기는 법을 데이터로 분석합니다.
+                    </p>
+                </div>
+
+                <div class="company-card bg-purple-50 p-8 rounded-xl">
+                    <div class="text-4xl mb-4">🔍</div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">진실 탐구</h3>
+                    <p class="text-gray-600">
+                        데이터를 통해 정치의 진실을 찾아갑니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 로그인 모달 -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="login-form bg-white rounded-2xl p-8 w-full max-w-md">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">로그인</h3>
+                    <p class="text-gray-600">컨텍스트 서비스에 로그인하세요</p>
+                </div>
+
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+                        <input type="email" id="email" name="email" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
+                        <input type="password" id="password" name="password" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-600">로그인 상태 유지</span>
+                        </label>
+                        <a href="#" class="text-sm text-blue-600 hover:text-blue-800">비밀번호 찾기</a>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors">
+                        로그인
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600">
+                        계정이 없으신가요? 
+                        <a href="#" id="signupLink" class="text-blue-600 hover:text-blue-800 font-medium">회원가입</a>
+                    </p>
+                </div>
+
+                <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 회원가입 모달 -->
+    <div id="signupModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="login-form bg-white rounded-2xl p-8 w-full max-w-md">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">회원가입</h3>
+                    <p class="text-gray-600">컨텍스트 서비스에 가입하세요</p>
+                </div>
+
+                <form id="signupForm" class="space-y-4">
+                    <div>
+                        <label for="signupName" class="block text-sm font-medium text-gray-700 mb-2">이름</label>
+                        <input type="text" id="signupName" name="name" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="signupEmail" class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+                        <input type="email" id="signupEmail" name="email" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="signupPassword" class="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
+                        <input type="password" id="signupPassword" name="password" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="agreeTerms" required class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="agreeTerms" class="ml-2 text-sm text-gray-600">
+                            <a href="#" class="text-blue-600 hover:text-blue-800">이용약관</a> 및 
+                            <a href="#" class="text-blue-600 hover:text-blue-800">개인정보처리방침</a>에 동의합니다.
+                        </label>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors">
+                        회원가입
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600">
+                        이미 계정이 있으신가요? 
+                        <a href="#" id="loginLink" class="text-blue-600 hover:text-blue-800 font-medium">로그인</a>
+                    </p>
+                </div>
+
+                <button id="closeSignupModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 푸터 -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">컨텍스트</h3>
+                    <p class="text-gray-300 mb-4">
+                        정치에 대한 데이터의 편견
+                    </p>
+                    <p class="text-sm text-gray-400">ESTD 2025. YECUIDO</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">서비스</h4>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-white transition-colors">정치인 분석</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">토픽 모델링</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">데이터 시각화</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">연락처</h4>
+                    <p class="text-gray-300 mb-2">이메일: justbuild.pd@gmail.com</p>
+                    <p class="text-gray-300">문의사항이 있으시면 언제든 연락주세요.</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2025 컨텍스트. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM 요소
+        const loginBtn = document.getElementById('loginBtn');
+        const loginModal = document.getElementById('loginModal');
+        const signupModal = document.getElementById('signupModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const closeSignupModal = document.getElementById('closeSignupModal');
+        const signupLink = document.getElementById('signupLink');
+        const loginLink = document.getElementById('loginLink');
+        const learnMoreBtn = document.getElementById('learnMoreBtn');
+        const contactBtn = document.getElementById('contactBtn');
+        const aboutSection = document.getElementById('aboutSection');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+
+        // 로그인 모달 열기
+        loginBtn.addEventListener('click', () => {
+            loginModal.classList.remove('hidden');
+        });
+
+        // 로그인 모달 닫기
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+        });
+
+        // 회원가입 모달 열기
+        signupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginModal.classList.add('hidden');
+            signupModal.classList.remove('hidden');
+        });
+
+        // 회원가입 모달 닫기
+        closeSignupModal.addEventListener('click', () => {
+            signupModal.classList.add('hidden');
+        });
+
+        // 로그인 링크
+        loginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            signupModal.classList.add('hidden');
+            loginModal.classList.remove('hidden');
+        });
+
+        // 더 알아보기 버튼
+        learnMoreBtn.addEventListener('click', () => {
+            aboutSection.classList.remove('hidden');
+            aboutSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // 문의하기 버튼
+        contactBtn.addEventListener('click', () => {
+            window.location.href = 'mailto:justbuild.pd@gmail.com';
+        });
+
+        // 로그인 폼 제출
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // 간단한 로그인 검증 (실제로는 서버에서 처리)
+            if (email === 'admin@context.com' && password === 'admin123') {
+                alert('로그인 성공! 대시보드로 이동합니다.');
+                window.location.href = '/dashboard.html';
+            } else {
+                alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+            }
+        });
+
+        // 회원가입 폼 제출
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                alert('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+            
+            if (!document.getElementById('agreeTerms').checked) {
+                alert('이용약관에 동의해주세요.');
+                return;
+            }
+            
+            alert('회원가입이 완료되었습니다! 로그인해주세요.');
+            signupModal.classList.add('hidden');
+            loginModal.classList.remove('hidden');
+        });
+
+        // 모달 외부 클릭 시 닫기
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.classList.add('hidden');
+            }
+        });
+
+        signupModal.addEventListener('click', (e) => {
+            if (e.target === signupModal) {
+                signupModal.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
