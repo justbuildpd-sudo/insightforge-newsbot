@@ -1,5 +1,5 @@
 // InsightForge 웹 애플리케이션 - 개선된 디자인과 데이터 로드
-const API_BASE = 'http://localhost:3002';
+const API_BASE = 'https://insightforge-newsbot.vercel.app';
 
 // 전역 변수
 let allSido = [];
