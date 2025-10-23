@@ -1,5 +1,5 @@
 // InsightForge 웹 애플리케이션 - 개선된 디자인과 데이터 로드
-// Version: 3.3.0 - API FIXED - Vercel serverless functions working
+// Version: 3.4.0 - CACHE BUSTED - FORCE RELOAD - NO LOCALHOST
 const API_BASE = 'https://insightforge-newsbot.vercel.app';
 
 // 전역 변수
@@ -39,10 +39,24 @@ function showContent() {
     if (errorEl) errorEl.classList.add('hidden');
 }
 
-// API 호출 헬퍼
+// API 호출 헬퍼 - 강력한 캐시 버스팅
 async function fetchAPI(url) {
     try {
-        const response = await fetch(url);
+        // 강력한 캐시 버스팅 파라미터 추가
+        const cacheBuster = `?v=3.4.0&t=${Date.now()}&cache=busted&force=reload`;
+        const finalUrl = url + cacheBuster;
+        
+        console.log('🚀 API 호출:', finalUrl);
+        
+        const response = await fetch(finalUrl, {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
+        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -56,10 +70,11 @@ async function fetchAPI(url) {
 // 시도 데이터 로드
 async function loadSidoData() {
     try {
-        console.log('📊 시도 데이터 로드 중... (v3.3.0 - API FIXED)');
+        console.log('📊 시도 데이터 로드 중... (v3.4.0 - CACHE BUSTED)');
         console.log('🔗 API URL:', `${API_BASE}/api/sido`);
+        console.log('🚨 강제 캐시 버스팅 적용 - localhost 완전 제거');
+        console.log('⚠️ 이전 버전 캐시 완전 삭제 필요!');
         console.log('✅ Vercel 서버리스 함수 정상 작동');
-        console.log('🚀 API 엔드포인트 연결 확인됨');
         const data = await fetchAPI(`${API_BASE}/api/sido`);
         
         if (data && data.sido_list) {
