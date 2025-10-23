@@ -56,6 +56,13 @@ function loadJsonFile(filename) {
         } else if (existsSync(filePath)) {
             // 큰 JSON 파일의 경우 스트리밍 파싱
             const content = readFileSync(filePath, 'utf8');
+            
+            // Vercel 페이로드 크기 제한 확인 (4.5MB)
+            if (content.length > 4.5 * 1024 * 1024) {
+                console.warn(`File ${filename} is too large (${(content.length / 1024 / 1024).toFixed(2)}MB), using sample data`);
+                return null; // 샘플 데이터 사용
+            }
+            
             data = JSON.parse(content);
         } else {
             console.log(`File not found: ${filePath}`);
@@ -470,15 +477,53 @@ app.get('/api/contextchecker', (req, res) => {
     });
 });
 
-// 에러 핸들링
+// 에러 핸들링 (Vercel 최적화)
 app.use((err, req, res, next) => {
     console.error('Error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    
+    // Vercel 에러 코드에 따른 처리
+    if (err.code === 'FUNCTION_INVOCATION_FAILED') {
+        res.status(500).json({ 
+            error: 'Function invocation failed',
+            code: 'FUNCTION_INVOCATION_FAILED',
+            message: 'API function failed to execute'
+        });
+    } else if (err.code === 'FUNCTION_INVOCATION_TIMEOUT') {
+        res.status(504).json({ 
+            error: 'Function timeout',
+            code: 'FUNCTION_INVOCATION_TIMEOUT',
+            message: 'API function execution timeout'
+        });
+    } else if (err.code === 'FUNCTION_PAYLOAD_TOO_LARGE') {
+        res.status(413).json({ 
+            error: 'Payload too large',
+            code: 'FUNCTION_PAYLOAD_TOO_LARGE',
+            message: 'Request payload exceeds size limit'
+        });
+    } else {
+        res.status(500).json({ 
+            error: 'Internal server error',
+            code: 'INTERNAL_ERROR',
+            message: 'An unexpected error occurred'
+        });
+    }
 });
 
-// 404 핸들링
+// 404 핸들링 (Vercel 최적화)
 app.use((req, res) => {
-    res.status(404).json({ error: 'Endpoint not found' });
+    res.status(404).json({ 
+        error: 'Endpoint not found',
+        code: 'NOT_FOUND',
+        message: `The requested endpoint ${req.path} was not found`,
+        availableEndpoints: [
+            '/api/health',
+            '/api/sido',
+            '/api/politicians',
+            '/api/lda',
+            '/landing.html',
+            '/dashboard.html'
+        ]
+    });
 });
 
 module.exports = app;
