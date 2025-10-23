@@ -11,6 +11,36 @@ const { promisify } = require('util');
 
 const app = express();
 
+// 정적 파일 서빙 함수
+function serveStaticFile(filename) {
+    try {
+        const filePath = path.join(__dirname, '..', filename);
+        
+        // 파일 존재 확인
+        if (!fs.existsSync(filePath)) {
+            return null;
+        }
+        
+        // 파일 읽기
+        const content = fs.readFileSync(filePath, 'utf8');
+        
+        // MIME 타입 결정
+        let mimeType = 'text/plain';
+        if (filename.endsWith('.html')) {
+            mimeType = 'text/html';
+        } else if (filename.endsWith('.js')) {
+            mimeType = 'application/javascript';
+        } else if (filename.endsWith('.css')) {
+            mimeType = 'text/css';
+        }
+        
+        return { content, mimeType };
+    } catch (error) {
+        console.error(`Error loading ${filename}:`, error.message);
+        return null;
+    }
+}
+
 // 미들웨어 설정
 app.use(compression());
 app.use(cors());
@@ -506,6 +536,47 @@ app.use((err, req, res, next) => {
             code: 'INTERNAL_ERROR',
             message: 'An unexpected error occurred'
         });
+    }
+});
+
+// 정적 파일 서빙 엔드포인트
+app.get('/', (req, res) => {
+    const result = serveStaticFile('index.html');
+    if (result) {
+        res.setHeader('Content-Type', result.mimeType);
+        res.send(result.content);
+    } else {
+        res.status(404).send('File not found');
+    }
+});
+
+app.get('/landing.html', (req, res) => {
+    const result = serveStaticFile('landing.html');
+    if (result) {
+        res.setHeader('Content-Type', result.mimeType);
+        res.send(result.content);
+    } else {
+        res.status(404).send('File not found');
+    }
+});
+
+app.get('/dashboard.html', (req, res) => {
+    const result = serveStaticFile('dashboard.html');
+    if (result) {
+        res.setHeader('Content-Type', result.mimeType);
+        res.send(result.content);
+    } else {
+        res.status(404).send('File not found');
+    }
+});
+
+app.get('/app.js', (req, res) => {
+    const result = serveStaticFile('app.js');
+    if (result) {
+        res.setHeader('Content-Type', result.mimeType);
+        res.send(result.content);
+    } else {
+        res.status(404).send('File not found');
     }
 });
 
