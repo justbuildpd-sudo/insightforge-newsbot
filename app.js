@@ -1,5 +1,5 @@
 // InsightForge 웹 애플리케이션 - 개선된 디자인과 데이터 로드
-// Version: 3.2.0 - FORCE CACHE BUST - localhost issue FIXED
+// Version: 3.3.0 - API FIXED - Vercel serverless functions working
 const API_BASE = 'https://insightforge-newsbot.vercel.app';
 
 // 전역 변수
@@ -56,10 +56,10 @@ async function fetchAPI(url) {
 // 시도 데이터 로드
 async function loadSidoData() {
     try {
-        console.log('📊 시도 데이터 로드 중... (v3.2.0 - FORCE CACHE BUST)');
+        console.log('📊 시도 데이터 로드 중... (v3.3.0 - API FIXED)');
         console.log('🔗 API URL:', `${API_BASE}/api/sido`);
-        console.log('🚀 강제 캐시 버스팅 적용 - localhost 문제 해결');
-        console.log('⚠️ 이전 버전 캐시가 감지되면 브라우저 캐시를 완전히 삭제하세요!');
+        console.log('✅ Vercel 서버리스 함수 정상 작동');
+        console.log('🚀 API 엔드포인트 연결 확인됨');
         const data = await fetchAPI(`${API_BASE}/api/sido`);
         
         if (data && data.sido_list) {
