@@ -1,4 +1,5 @@
 // InsightForge 웹 애플리케이션 - 개선된 디자인과 데이터 로드
+// Version: 2.0.0 - Cache busting update
 const API_BASE = 'https://insightforge-newsbot.vercel.app';
 
 // 전역 변수
@@ -55,7 +56,8 @@ async function fetchAPI(url) {
 // 시도 데이터 로드
 async function loadSidoData() {
     try {
-        console.log('📊 시도 데이터 로드 중...');
+        console.log('📊 시도 데이터 로드 중... (v2.0.0)');
+        console.log('🔗 API URL:', `${API_BASE}/api/sido`);
         const data = await fetchAPI(`${API_BASE}/api/sido`);
         
         if (data && data.sido_list) {
