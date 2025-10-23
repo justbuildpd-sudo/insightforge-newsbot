@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 과거 데이터 수집 (2008-2025, 매일 자동)
+  # 다중 API를 사용한 과거 데이터 수집 (2008-2025, 하루 종일)
   newsanalyzer-historical:
     build: .
     container_name: newsanalyzer-historical
@@ -12,12 +12,34 @@ services:
       - ./data:/app/data
       - ./output:/app/output
       - ./logs:/app/logs
+      - ./multi_api_config.json:/app/multi_api_config.json
     
     environment:
       - TZ=Asia/Seoul
-      - COLLECTION_MODE=historical
-      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID:-ULDLTGiPvrrPBgbuydSm}
-      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET:-uO5mu7UQBg}
+      - COLLECTION_MODE=enhanced_historical
+      - MULTI_API_ENABLED=true
+    
+    networks:
+      - newsanalyzer-network
+  
+  # API 관리 웹 서버
+  api-management:
+    build: .
+    container_name: api-management
+    restart: unless-stopped
+    
+    ports:
+      - "5000:5000"
+    
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./multi_api_config.json:/app/multi_api_config.json
+      - ./templates:/app/templates
+    
+    environment:
+      - TZ=Asia/Seoul
+      - FLASK_ENV=production
     
     networks:
       - newsanalyzer-network
@@ -33,12 +55,12 @@ services:
       - ./output:/app/output
       - ./logs:/app/logs
       - ../insightforge-web/data:/app/insightforge-data
+      - ./multi_api_config.json:/app/multi_api_config.json
     
     environment:
       - TZ=Asia/Seoul
       - COLLECTION_MODE=daily
-      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID:-ULDLTGiPvrrPBgbuydSm}
-      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET:-uO5mu7UQBg}
+      - MULTI_API_ENABLED=true
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - VERCEL_TOKEN=${VERCEL_TOKEN}
     

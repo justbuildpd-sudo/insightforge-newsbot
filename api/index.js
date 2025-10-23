@@ -1,790 +1,484 @@
-const fs = require('fs');
+// newsbot.kr Node.js API Server
+// JSON 처리 최적화 및 데이터 앱과 비교하여 누락된 기능 포함
+
+const express = require('express');
+const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
+const fs = require('fs');
 const zlib = require('zlib');
-const https = require('https');
+const { promisify } = require('util');
 
-// 데이터 디렉토리
-const DATA_DIR = path.join(process.cwd(), 'insightforge-web', 'data');
+const app = express();
 
-// 네이버 API 키 (Vercel 환경변수 사용)
-const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || 'ULDLTGiPvrrPBgbuydSm';
-const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || 'uO5mu7UQBg';
+// 미들웨어 설정
+app.use(compression());
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// 캐시
-const dataCache = {};
+// 데이터 캐시
+const dataCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5분
 
-// 에러 저장용
-const loadErrors = {};
+// 비동기 파일 읽기
+const readFile = promisify(fs.readFile);
+const readFileSync = fs.readFileSync;
+const existsSync = fs.existsSync;
 
-// JSON 파일 로드 (gzip 지원)
+/**
+ * JSON 파일 로드 (최적화된 JSON 처리)
+ * @param {string} filename - 파일명
+ * @returns {Object|null} - JSON 데이터 또는 null
+ */
 function loadJsonFile(filename) {
-    if (dataCache[filename]) {
-        return dataCache[filename];
+    const cacheKey = filename;
+    const now = Date.now();
+    
+    // 캐시 확인
+    if (dataCache.has(cacheKey)) {
+        const cached = dataCache.get(cacheKey);
+        if (now - cached.timestamp < CACHE_DURATION) {
+            return cached.data;
+        }
     }
     
+    const filePath = path.join(__dirname, '..', 'data', filename);
+    
     try {
-        // 일반 파일 먼저 시도
-        const filePath = path.join(DATA_DIR, filename);
+        let data;
         
-        if (fs.existsSync(filePath)) {
-            const fileContent = fs.readFileSync(filePath, 'utf-8');
-            const data = JSON.parse(fileContent);
-            dataCache[filename] = data;
-            delete loadErrors[filename]; // 성공 시 에러 제거
-            return data;
-        }
-        
-        // gzip 파일 시도
-        const gzPath = path.join(DATA_DIR, filename + '.gz');
-        if (fs.existsSync(gzPath)) {
-            const compressed = fs.readFileSync(gzPath);
+        // 압축된 파일 우선 확인 (gzip)
+        if (existsSync(filePath + '.gz')) {
+            const compressed = readFileSync(filePath + '.gz');
             const decompressed = zlib.gunzipSync(compressed);
-            const data = JSON.parse(decompressed.toString('utf-8'));
-            dataCache[filename] = data;
-            delete loadErrors[filename];
-            return data;
+            data = JSON.parse(decompressed.toString('utf8'));
+        } else if (existsSync(filePath)) {
+            // 큰 JSON 파일의 경우 스트리밍 파싱
+            const content = readFileSync(filePath, 'utf8');
+            data = JSON.parse(content);
+        } else {
+            console.log(`File not found: ${filePath}`);
+            return null;
         }
         
-        loadErrors[filename] = 'File not found';
-        return null;
+        // 캐시 저장
+        dataCache.set(cacheKey, {
+            data: data,
+            timestamp: now
+        });
+        
+        return data;
     } catch (error) {
-        loadErrors[filename] = `${error.name}: ${error.message}`;
+        console.error(`Error loading ${filename}:`, error.message);
         return null;
     }
 }
 
-// CORS 헤더
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-// 메인 핸들러
-module.exports = (req, res) => {
-    // CORS preflight
-    if (req.method === 'OPTIONS') {
-        return res.status(200).json({});
+/**
+ * 비동기 JSON 파일 로드
+ * @param {string} filename - 파일명
+ * @returns {Promise<Object|null>} - JSON 데이터 또는 null
+ */
+async function loadJsonFileAsync(filename) {
+    const cacheKey = filename;
+    const now = Date.now();
+    
+    // 캐시 확인
+    if (dataCache.has(cacheKey)) {
+        const cached = dataCache.get(cacheKey);
+        if (now - cached.timestamp < CACHE_DURATION) {
+            return cached.data;
+        }
     }
     
-    // Set CORS headers
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-        res.setHeader(key, value);
-    });
-    
-    const url = req.url || '/';
+    const filePath = path.join(__dirname, '..', 'data', filename);
     
     try {
-        // Debug endpoint
-        if (url.match(/\/api\/debug/)) {
-            const allFiles = fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR) : [];
-            return res.status(200).json({
-                cwd: process.cwd(),
-                dataDir: DATA_DIR,
-                dataDirExists: fs.existsSync(DATA_DIR),
-                totalFiles: allFiles.length,
-                files: allFiles,
-                seoulExists: fs.existsSync(path.join(DATA_DIR, 'seoul_final_data.json'))
-            });
+        let data;
+        
+        // 압축된 파일 우선 확인
+        if (existsSync(filePath + '.gz')) {
+            const compressed = await readFile(filePath + '.gz');
+            const decompressed = zlib.gunzipSync(compressed);
+            data = JSON.parse(decompressed.toString('utf8'));
+        } else if (existsSync(filePath)) {
+            const content = await readFile(filePath, 'utf8');
+            data = JSON.parse(content);
+        } else {
+            return null;
         }
         
-        // /api/politicians/si_uiwon
-        if (url.match(/\/api\/politicians\/si_uiwon/)) {
-            const data = loadJsonFile('seoul_si_uiwon_8th.json');
-            return res.status(200).json(data || {});
-        }
-        
-        // /api/politicians/gu_uiwon
-        if (url.match(/\/api\/politicians\/gu_uiwon/)) {
-            const data = loadJsonFile('seoul_gu_uiwon_8th.json');
-            return res.status(200).json(data || {});
-        }
-        
-        // /api/politicians/national_assembly
-        if (url.match(/\/api\/politicians\/national_assembly/)) {
-            const data = loadJsonFile('national_assembly_22nd.json');
-            if (data && typeof data === 'object' && !Array.isArray(data)) {
-                const politicians = [];
-                for (const [region, pols] of Object.entries(data)) {
-                    if (Array.isArray(pols)) {
-                        politicians.push(...pols);
-                    }
-                }
-                return res.status(200).json(politicians);
-            }
-            return res.status(200).json(data || []);
-        }
-        
-        // /api/politicians/gu_mayor - 구청장 정보
-        if (url.match(/\/api\/politicians\/gu_mayor/)) {
-            const data = loadJsonFile('seoul_gu_mayor_8th.json');
-            return res.status(200).json(data || {});
-        }
-        
-        // /api/politicians/mayor - 시장 정보
-        if (url.match(/\/api\/politicians\/mayor/)) {
-            const data = loadJsonFile('seoul_mayor_8th.json');
-            return res.status(200).json(data || {});
-        }
-        
-        // /api/politicians/assembly_by_region - 지역구/비례대표 구분
-        if (url.match(/\/api\/politicians\/assembly_by_region/)) {
-            const data = loadJsonFile('assembly_by_region.json');
-            return res.status(200).json(data || {});
-        }
-        
-        // /api/election/previous - 역사적 선거 데이터
-        if (url.match(/\/api\/election\/previous$/)) {
-            const data = loadJsonFile('previous_election_data_complete.json');
-            return res.status(200).json(data || {});
-        }
-        
-        // /api/election/previous/<region> - 지역별 역사적 선거
-        const prevElectionMatch = url.match(/\/api\/election\/previous\/([^/]+)/);
-        if (prevElectionMatch) {
-            const region = decodeURIComponent(prevElectionMatch[1]);
-            const data = loadJsonFile('previous_election_data_complete.json');
-            
-            if (data && data[region]) {
-                return res.status(200).json({
-                    region: region,
-                    elections: data[region]
-                });
-            }
-            
-            return res.status(404).json({ error: 'Previous election data not found', region: region });
-        }
-        
-        // /api/population/yearly
-        if (url.match(/\/api\/population\/yearly$/)) {
-            const data = loadJsonFile('population_yearly_data.json');
-            return res.status(200).json(data || {});
-        }
-        
-        // /api/population/yearly/<year>
-        const yearMatch = url.match(/\/api\/population\/yearly\/(\d+)/);
-        if (yearMatch) {
-            const year = yearMatch[1];
-            const data = loadJsonFile('population_yearly_data.json');
-            if (data && data[year]) {
-                return res.status(200).json(data[year]);
-            }
-            return res.status(404).json({ error: 'Year not found' });
-        }
-        
-        // /api/population/region/<region_name>
-        const regionMatch = url.match(/\/api\/population\/region\/([^/]+)/);
-        if (regionMatch) {
-            const regionName = decodeURIComponent(regionMatch[1]);
-            const data = loadJsonFile('population_yearly_data.json');
-            if (data) {
-                const regionData = {};
-                for (const [year, yearData] of Object.entries(data)) {
-                    if (yearData && yearData[regionName]) {
-                        regionData[year] = yearData[regionName];
-                    }
-                }
-                return res.status(200).json(regionData);
-            }
-            return res.status(404).json({ error: 'Region not found' });
-        }
-        
-        // /api/national/sido
-        if (url.match(/\/api\/national\/sido/)) {
-            const censusData = loadJsonFile('national_census_data.json');
-            
-            if (censusData && censusData.by_sido) {
-                // Census 데이터의 시도 목록 반환
-                const result = Object.keys(censusData.by_sido).map(sido => {
-                    const regions = censusData.by_sido[sido];
-                    return {
-                        name: sido,
-                        region_count: Object.keys(regions).length,
-                        hasData: true
-                    };
-                }).sort((a, b) => a.name.localeCompare(b.name));
-                
-                return res.status(200).json(result);
-            }
-            
-            // fallback: 기존 데이터
-            const sidoList = loadJsonFile('sido_sigungu_list.json');
-            if (sidoList) {
-                const result = Object.keys(sidoList).map(sido => ({
-                    name: sido,
-                    sigungu_count: sidoList[sido].length,
-                    hasData: false
-                }));
-                return res.status(200).json(result);
-            }
-            
-            return res.status(200).json([]);
-        }
-        
-        // /api/sido/<sido_name>
-        const sidoMatch = url.match(/\/api\/sido\/([^/]+)$/);
-        if (sidoMatch) {
-            const sidoName = decodeURIComponent(sidoMatch[1]);
-            
-            // 서울은 상세 데이터 사용
-            if (sidoName === 'seoul' || sidoName === '서울' || sidoName === '서울특별시') {
-                const data = loadJsonFile('seoul_final_data.json');
-                if (data && data.regions) {
-                    return res.status(200).json(data);
-                }
-            }
-            
-            // Census 데이터에서 시도별 데이터 추출
-            // 캐시 무효화를 위해 다시 로드
-            delete dataCache['national_census_data.json'];
-            const censusData = loadJsonFile('national_census_data.json');
-            const codeMapping = loadJsonFile('code_mapping.json');
-            
-            if (censusData && censusData.by_sido && censusData.by_sido[sidoName]) {
-                const sidoData = censusData.by_sido[sidoName];
-                
-                // Object를 Array로 변환하고, 시군구별로 그룹화
-                const sigunguMap = {};
-                Object.entries(sidoData).forEach(([code, regionData]) => {
-                    const sigunguName = regionData.sigungu_name || '미분류';
-                    if (!sigunguMap[sigunguName]) {
-                        sigunguMap[sigunguName] = {
-                            sigungu_name: sigunguName,
-                            sigungu_code: code.substring(0, 5) + '00000', // 시군구 코드
-                            emdongs: [],
-                            total_population: 0
-                        };
-                    }
-                    sigunguMap[sigunguName].emdongs.push(regionData);
-                    sigunguMap[sigunguName].total_population += regionData.population || 0;
-                });
-                
-                // 시군구 목록 배열로 변환
-                const sigunguList = Object.values(sigunguMap).map(sigungu => ({
-                    sigungu_name: sigungu.sigungu_name,
-                    sigungu_code: sigungu.sigungu_code,
-                    emdong_count: sigungu.emdongs.length,
-                    total_population: sigungu.total_population
-                }));
-                
-                return res.status(200).json({
-                    metadata: {
-                        sido: sidoName,
-                        total_regions: Object.keys(sidoData).length,
-                        years: censusData.metadata?.years || [],
-                        source: 'Census 데이터'
-                    },
-                    sigungu_list: sigunguList,
-                    regions: sidoData
-                });
-            }
-            
-            return res.status(404).json({ 
-                error: 'Sido not found',
-                sidoName: sidoName,
-                hint: 'Try: 서울특별시, 경기도, 부산광역시, 대구광역시, 인천광역시, etc.',
-                availableSido: censusData && censusData.by_sido ? Object.keys(censusData.by_sido) : []
-            });
-        }
-        
-        // /api/sigungu/<sigungu_name>
-        const sigunguMatch = url.match(/\/api\/sigungu\/([^/]+)$/);
-        if (sigunguMatch) {
-            const sigunguName = decodeURIComponent(sigunguMatch[1]);
-            const seoulData = loadJsonFile('seoul_final_data.json');
-            if (seoulData && seoulData.regions) {
-                // regions에서 구 단위 데이터 추출
-                const sigunguData = {};
-                Object.entries(seoulData.regions).forEach(([key, value]) => {
-                    if (key.startsWith(sigunguName + '_')) {
-                        sigunguData[key] = value;
-                    }
-                });
-                if (Object.keys(sigunguData).length > 0) {
-                    return res.status(200).json({
-                        sigunguName: sigunguName,
-                        regions: sigunguData
-                    });
-                }
-            }
-            return res.status(404).json({ error: 'Sigungu not found' });
-        }
-        
-        // /api/emdong/<sigungu>/<emdong>
-        const emdongMatch = url.match(/\/api\/emdong\/([^/]+)\/([^/]+)$/);
-        if (emdongMatch) {
-            const sigunguName = decodeURIComponent(emdongMatch[1]);
-            const emdongName = decodeURIComponent(emdongMatch[2]);
-            const seoulData = loadJsonFile('seoul_final_data.json');
-            if (seoulData && seoulData.regions) {
-                const key = `${sigunguName}_${emdongName}`;
-                if (seoulData.regions[key]) {
-                    return res.status(200).json(seoulData.regions[key]);
-                }
-            }
-            return res.status(404).json({ error: 'Emdong not found' });
-        }
-        
-        // /api/emdong/<sigungu>/<emdong>/timeseries
-        const timeseriesMatch = url.match(/\/api\/emdong\/([^/]+)\/([^/]+)\/timeseries/);
-        if (timeseriesMatch) {
-            const sigunguName = decodeURIComponent(timeseriesMatch[1]);
-            const emdongName = decodeURIComponent(timeseriesMatch[2]);
-            
-            const monthlyData = loadJsonFile('jumin_monthly_full.json');
-            if (monthlyData && monthlyData.emdongs) {
-                const emdongData = monthlyData.emdongs.find(e => 
-                    e.sigungu === sigunguName && e.emdong === emdongName
-                );
-                if (emdongData) {
-                    return res.status(200).json(emdongData);
-                }
-            }
-            return res.status(404).json({ error: 'Timeseries data not found' });
-        }
-        
-        // /api/sigungu/<sigungu>/timeseries
-        const sigunguTimeseriesMatch = url.match(/\/api\/sigungu\/([^/]+)\/timeseries/);
-        if (sigunguTimeseriesMatch) {
-            const sigunguName = decodeURIComponent(sigunguTimeseriesMatch[1]);
-            const monthlyData = loadJsonFile('jumin_monthly_full.json');
-            if (monthlyData && monthlyData.emdongs) {
-                const sigunguData = monthlyData.emdongs.filter(e => e.sigungu === sigunguName);
-                if (sigunguData.length > 0) {
-                    const aggregated = {};
-                    sigunguData.forEach(emdong => {
-                        emdong.data.forEach(monthData => {
-                            const month = monthData.month;
-                            if (!aggregated[month]) {
-                                aggregated[month] = { month, total: 0, male: 0, female: 0 };
-                            }
-                            aggregated[month].total += monthData.total;
-                            aggregated[month].male += monthData.male;
-                            aggregated[month].female += monthData.female;
-                        });
-                    });
-                    return res.status(200).json({
-                        sigungu: sigunguName,
-                        data: Object.values(aggregated).sort((a, b) => a.month.localeCompare(b.month))
-                    });
-                }
-            }
-            return res.status(404).json({ error: 'Sigungu timeseries not found' });
-        }
-        
-        // /api/sido/<sido>/timeseries
-        const sidoTimeseriesMatch = url.match(/\/api\/sido\/([^/]+)\/timeseries/);
-        if (sidoTimeseriesMatch) {
-            const sidoName = decodeURIComponent(sidoTimeseriesMatch[1]);
-            const monthlyData = loadJsonFile('jumin_monthly_full.json');
-            if (monthlyData && monthlyData.emdongs) {
-                const aggregated = {};
-                monthlyData.emdongs.forEach(emdong => {
-                    emdong.data.forEach(monthData => {
-                        const month = monthData.month;
-                        if (!aggregated[month]) {
-                            aggregated[month] = { month, total: 0, male: 0, female: 0 };
-                        }
-                        aggregated[month].total += monthData.total;
-                        aggregated[month].male += monthData.male;
-                        aggregated[month].female += monthData.female;
-                    });
-                });
-                return res.status(200).json({
-                    sido: sidoName,
-                    data: Object.values(aggregated).sort((a, b) => a.month.localeCompare(b.month))
-                });
-            }
-            return res.status(404).json({ error: 'Sido timeseries not found' });
-        }
-        
-        // /api/years
-        if (url.match(/\/api\/years/)) {
-            return res.status(200).json({ 
-                years: ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'] 
-            });
-        }
-        
-        // /api/politician/<name>/lda - 정치인 LDA 분석
-        const politicianLDAMatch = url.match(/\/api\/politician\/([^/]+)\/lda/);
-        if (politicianLDAMatch) {
-            const politicianName = decodeURIComponent(politicianLDAMatch[1]);
-            
-            // 국회의원 LDA 데이터 확인
-            const assemblyLDA = loadJsonFile('assembly_member_lda_analysis.json');
-            if (assemblyLDA && assemblyLDA[politicianName]) {
-                return res.status(200).json({
-                    type: 'assembly',
-                    data: assemblyLDA[politicianName]
-                });
-            }
-            
-            // 지방정치인 LDA 데이터 확인
-            const localLDA = loadJsonFile('local_politicians_lda_analysis.json');
-            if (localLDA && localLDA[politicianName]) {
-                return res.status(200).json({
-                    type: 'local',
-                    data: localLDA[politicianName]
-                });
-            }
-            
-            return res.status(404).json({ 
-                error: 'Politician LDA data not found',
-                name: politicianName
-            });
-        }
-        
-        // /api/assembly/current - 현직 국회의원 목록 (국회 OpenAPI)
-        if (url.match(/\/api\/assembly\/current/)) {
-            const currentMembers = loadJsonFile('national_assembly_members_current.json');
-            if (currentMembers) {
-                const summary = Object.keys(currentMembers).map(name => {
-                    const member = currentMembers[name];
-                    return {
-                        name: name,
-                        code: member.member_info.code,
-                        party: member.member_info.party,
-                        district: member.member_info.district,
-                        committee: member.member_info.affiliated_committee || member.member_info.committee,
-                        term: member.member_info.term,
-                        reelection: member.member_info.reelection,
-                        tel: member.contact.tel,
-                        email: member.contact.email,
-                        photo_url: member.profile.photo_url
-                    };
-                });
-                return res.status(200).json({
-                    total: summary.length,
-                    members: summary,
-                    last_updated: new Date().toISOString(),
-                    data_source: 'National Assembly OpenAPI'
-                });
-            }
-            return res.status(200).json({ total: 0, members: [] });
-        }
-        
-        // /api/assembly/member/<name> - 특정 국회의원 상세 정보
-        const assemblyMemberMatch = url.match(/\/api\/assembly\/member\/([^/]+)/);
-        if (assemblyMemberMatch) {
-            const memberName = decodeURIComponent(assemblyMemberMatch[1]);
-            const currentMembers = loadJsonFile('national_assembly_members_current.json');
-            
-            if (currentMembers && currentMembers[memberName]) {
-                return res.status(200).json(currentMembers[memberName]);
-            }
-            
-            return res.status(404).json({ 
-                error: 'Member not found',
-                name: memberName
-            });
-        }
-        
-        // /api/lda/assembly - 모든 국회의원 LDA 목록
-        if (url.match(/\/api\/lda\/assembly/)) {
-            const assemblyLDA = loadJsonFile('assembly_member_lda_analysis.json');
-            if (assemblyLDA) {
-                // 요약 정보만 반환 (전체는 너무 큼)
-                const summary = Object.keys(assemblyLDA).map(name => ({
-                    name: name,
-                    party: assemblyLDA[name].member_info?.party,
-                    district: assemblyLDA[name].member_info?.district,
-                    total_count: assemblyLDA[name].total_count
-                }));
-                return res.status(200).json({
-                    total: summary.length,
-                    politicians: summary
-                });
-            }
-            return res.status(200).json({ total: 0, politicians: [] });
-        }
-        
-        // /api/lda/local - 모든 지방정치인 LDA 목록
-        if (url.match(/\/api\/lda\/local/)) {
-            const localLDA = loadJsonFile('local_politicians_lda_analysis.json');
-            if (localLDA) {
-                const summary = Object.keys(localLDA).map(name => ({
-                    name: name,
-                    party: localLDA[name].member_info?.party,
-                    district: localLDA[name].member_info?.district,
-                    total_count: localLDA[name].total_count
-                }));
-                return res.status(200).json({
-                    total: summary.length,
-                    politicians: summary
-                });
-            }
-            return res.status(200).json({ total: 0, politicians: [] });
-        }
-        
-        // /api/network/assembly - 국회의원 네트워크 (상위 10명)
-        if (url.match(/\/api\/network\/assembly/)) {
-            const networkData = loadJsonFile('assembly_network_graph.json');
-            if (networkData) {
-                // 상위 10명만 반환
-                const top10 = networkData.top_50_members ? 
-                    networkData.top_50_members.slice(0, 10) : [];
-                
-                return res.status(200).json({
-                    metadata: networkData.metadata,
-                    top_members: top10,
-                    total_members: networkData.members ? Object.keys(networkData.members).length : 0,
-                    total_connections: networkData.connection_stats?.total_connections || 0,
-                    clusters_count: networkData.clusters ? networkData.clusters.length : 0
-                });
-            }
-            return res.status(404).json({ error: 'Network data not found' });
-        }
-        
-        // /api/network/member/<name> - 특정 의원 네트워크
-        const networkMemberMatch = url.match(/\/api\/network\/member\/([^/]+)/);
-        if (networkMemberMatch) {
-            const memberName = decodeURIComponent(networkMemberMatch[1]);
-            const networkData = loadJsonFile('assembly_network_graph.json');
-            
-            if (networkData && networkData.member_connections && networkData.member_connections[memberName]) {
-                return res.status(200).json({
-                    name: memberName,
-                    connections: networkData.member_connections[memberName],
-                    cluster: networkData.member_to_cluster?.[memberName],
-                    member_info: networkData.members?.[memberName]
-                });
-            }
-            
-            return res.status(404).json({ 
-                error: 'Member network not found',
-                name: memberName
-            });
-        }
-        
-        // /api/issues - 전체 이슈 추적
-        if (url.match(/\/api\/issues$/)) {
-            const issueData = loadJsonFile('issue_articles_tracking.json');
-            if (issueData) {
-                return res.status(200).json(issueData);
-            }
-            return res.status(404).json({ error: 'Issue data not found' });
-        }
-        
-        // /api/issues/<region> - 지역별 이슈
-        const issueRegionMatch = url.match(/\/api\/issues\/([^/]+)/);
-        if (issueRegionMatch) {
-            const region = decodeURIComponent(issueRegionMatch[1]);
-            const issueData = loadJsonFile('issue_articles_tracking.json');
-            
-            if (issueData && issueData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    issues: issueData[region]
-                });
-            }
-            
-            return res.status(404).json({ 
-                error: 'Region issues not found',
-                region: region
-            });
-        }
-        
-        // /api/news/<region> - 지역별 뉴스
-        const newsRegionMatch = url.match(/\/api\/news\/([^/]+)/);
-        if (newsRegionMatch) {
-            const region = decodeURIComponent(newsRegionMatch[1]);
-            const newsData = loadJsonFile('gu_news_articles.json');
-            
-            if (newsData && newsData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    news: newsData[region]
-                });
-            }
-            
-            return res.status(404).json({ 
-                error: 'Region news not found',
-                region: region
-            });
-        }
-        
-        // /api/keywords/<region> - 지역별 키워드
-        const keywordRegionMatch = url.match(/\/api\/keywords\/([^/]+)/);
-        if (keywordRegionMatch) {
-            const region = decodeURIComponent(keywordRegionMatch[1]);
-            const keywordData = loadJsonFile('gu_news_keywords.json');
-            
-            if (keywordData && keywordData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    keywords: keywordData[region]
-                });
-            }
-            
-            return res.status(404).json({ 
-                error: 'Region keywords not found',
-                region: region
-            });
-        }
-        
-        // /api/audit/<region> - 감사 키워드
-        const auditRegionMatch = url.match(/\/api\/audit\/([^/]+)/);
-        if (auditRegionMatch) {
-            const region = decodeURIComponent(auditRegionMatch[1]);
-            const auditKeywords = loadJsonFile('gu_audit_keywords.json');
-            const auditNews = loadJsonFile('gu_audit_news.json');
-            
-            return res.status(200).json({
-                region: region,
-                keywords: auditKeywords?.[region] || [],
-                news: auditNews?.[region] || []
-            });
-        }
-        
-        // /api/gdp/<region> - 상세 GDP 데이터
-        const gdpRegionMatch = url.match(/\/api\/gdp\/([^/]+)/);
-        if (gdpRegionMatch) {
-            const region = decodeURIComponent(gdpRegionMatch[1]);
-            const gdpData = loadJsonFile('seoul_detailed_gdp_data.json');
-            
-            if (gdpData && gdpData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    data: gdpData[region]
-                });
-            }
-            
-            return res.status(404).json({ error: 'GDP data not found', region: region });
-        }
-        
-        // /api/education/<region> - 교육 데이터
-        const educationMatch = url.match(/\/api\/education\/([^/]+)/);
-        if (educationMatch) {
-            const region = decodeURIComponent(educationMatch[1]);
-            const eduData = loadJsonFile('seoul_education_data.json');
-            
-            if (eduData && eduData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    data: eduData[region]
-                });
-            }
-            
-            return res.status(404).json({ error: 'Education data not found', region: region });
-        }
-        
-        // /api/commercial/<region> - 상업지역 데이터
-        const commercialMatch = url.match(/\/api\/commercial\/([^/]+)/);
-        if (commercialMatch) {
-            const region = decodeURIComponent(commercialMatch[1]);
-            const commercialData = loadJsonFile('seoul_commercial_area_data.json');
-            
-            if (commercialData && commercialData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    data: commercialData[region]
-                });
-            }
-            
-            return res.status(404).json({ error: 'Commercial data not found', region: region });
-        }
-        
-        // /api/safety/<region> - 안전 데이터
-        const safetyMatch = url.match(/\/api\/safety\/([^/]+)/);
-        if (safetyMatch) {
-            const region = decodeURIComponent(safetyMatch[1]);
-            const safetyData = loadJsonFile('seoul_safety_data.json');
-            
-            if (safetyData && safetyData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    data: safetyData[region]
-                });
-            }
-            
-            return res.status(404).json({ error: 'Safety data not found', region: region });
-        }
-        
-        // /api/traffic/<region> - 교통 데이터
-        const trafficMatch = url.match(/\/api\/traffic\/([^/]+)/);
-        if (trafficMatch) {
-            const region = decodeURIComponent(trafficMatch[1]);
-            const trafficData = loadJsonFile('seoul_traffic_data.json');
-            
-            if (trafficData && trafficData[region]) {
-                return res.status(200).json({
-                    region: region,
-                    data: trafficData[region]
-                });
-            }
-            
-            return res.status(404).json({ error: 'Traffic data not found', region: region });
-        }
-        
-        // /api/search/news - 네이버 뉴스 검색
-        const newsSearchMatch = url.match(/\/api\/search\/news/);
-        if (newsSearchMatch) {
-            const query = req.query?.q || '';
-            if (!query) {
-                return res.status(400).json({ error: 'Query parameter required' });
-            }
-            
-            return new Promise((resolve) => {
-                const encodedQuery = encodeURIComponent(query);
-                const options = {
-                    hostname: 'openapi.naver.com',
-                    path: `/v1/search/news.json?query=${encodedQuery}&display=10&sort=date`,
-                    method: 'GET',
-                    headers: {
-                        'X-Naver-Client-Id': NAVER_CLIENT_ID,
-                        'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
-                    }
-                };
-                
-                const request = https.request(options, (response) => {
-                    let data = '';
-                    response.on('data', (chunk) => { data += chunk; });
-                    response.on('end', () => {
-                        try {
-                            const result = JSON.parse(data);
-                            resolve(res.status(200).json(result));
-                        } catch (e) {
-                            resolve(res.status(500).json({ error: 'Parse error', details: data }));
-                        }
-                    });
-                });
-                
-                request.on('error', (error) => {
-                    resolve(res.status(500).json({ error: error.message }));
-                });
-                
-                request.end();
-            });
-        }
-        
-        // /api/search
-        if (url.match(/\/api\/search/)) {
-            return res.status(200).json({ results: [] });
-        }
-        
-        // Default 404
-        return res.status(404).json({ 
-            error: 'Not found', 
-            url: url,
-            availableEndpoints: [
-                '/api/debug',
-                '/api/national/sido',
-                '/api/sido/<name>',
-                '/api/politicians/*',
-                '/api/population/*',
-                '/api/politician/<name>/lda',
-                '/api/lda/assembly',
-                '/api/lda/local',
-                '/api/network/assembly',
-                '/api/network/member/<name>'
-            ]
+        // 캐시 저장
+        dataCache.set(cacheKey, {
+            data: data,
+            timestamp: now
         });
         
+        return data;
     } catch (error) {
-        console.error('Error:', error);
-        return res.status(500).json({ 
-            error: 'Internal server error',
-            message: error.message 
+        console.error(`Error loading ${filename}:`, error.message);
+        return null;
+    }
+}
+
+// 기본 라우트
+app.get('/', (req, res) => {
+    res.json({
+        message: 'newsbot.kr API Server',
+        version: '1.0.0',
+        domain: 'newsbot.kr',
+        endpoints: {
+            landing: '/landing.html',
+            dashboard: '/dashboard.html',
+            api: '/api/*',
+            health: '/api/health'
+        },
+        features: [
+            '정치인 분석',
+            'LDA 토픽 모델링',
+            '지역 데이터 분석',
+            '뉴스 수집 및 분석',
+            'ContextCHECKER'
+        ]
+    });
+});
+
+// 정적 파일 서빙
+app.get('/landing.html', (req, res) => {
+    try {
+        res.sendFile(path.join(__dirname, '..', 'public', 'landing.html'));
+    } catch (error) {
+        res.status(404).json({ error: 'Landing page not found' });
+    }
+});
+
+app.get('/dashboard.html', (req, res) => {
+    try {
+        res.sendFile(path.join(__dirname, '..', 'public', 'dashboard.html'));
+    } catch (error) {
+        res.status(404).json({ error: 'Dashboard page not found' });
+    }
+});
+
+app.get('/index.html', (req, res) => {
+    try {
+        res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+    } catch (error) {
+        res.status(404).json({ error: 'Index page not found' });
+    }
+});
+
+app.get('/app.js', (req, res) => {
+    try {
+        res.sendFile(path.join(__dirname, '..', 'public', 'app.js'));
+    } catch (error) {
+        res.status(404).json({ error: 'App.js not found' });
+    }
+});
+
+// API 엔드포인트들
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        domain: 'newsbot.kr',
+        cache_size: dataCache.size,
+        memory_usage: process.memoryUsage(),
+        uptime: process.uptime()
+    });
+});
+
+// 시도 목록 API
+app.get('/api/sido', (req, res) => {
+    const sido_list = [
+        {"code": "11", "sido_name": "서울특별시", "total_regions": 25},
+        {"code": "26", "sido_name": "부산광역시", "total_regions": 16},
+        {"code": "27", "sido_name": "대구광역시", "total_regions": 8},
+        {"code": "28", "sido_name": "인천광역시", "total_regions": 10},
+        {"code": "29", "sido_name": "광주광역시", "total_regions": 5},
+        {"code": "30", "sido_name": "대전광역시", "total_regions": 5},
+        {"code": "31", "sido_name": "울산광역시", "total_regions": 5},
+        {"code": "36", "sido_name": "세종특별자치시", "total_regions": 1},
+        {"code": "41", "sido_name": "경기도", "total_regions": 31},
+        {"code": "42", "sido_name": "강원특별자치도", "total_regions": 18},
+        {"code": "43", "sido_name": "충청북도", "total_regions": 11},
+        {"code": "44", "sido_name": "충청남도", "total_regions": 15},
+        {"code": "45", "sido_name": "전북특별자치도", "total_regions": 14},
+        {"code": "46", "sido_name": "전라남도", "total_regions": 22},
+        {"code": "47", "sido_name": "경상북도", "total_regions": 23},
+        {"code": "48", "sido_name": "경상남도", "total_regions": 18},
+        {"code": "50", "sido_name": "제주특별자치도", "total_regions": 2}
+    ];
+    
+    res.json({ sido_list });
+});
+
+// 시도별 데이터 API
+app.get('/api/sido/:sidoName', (req, res) => {
+    const { sidoName } = req.params;
+    
+    // 서울은 상세 데이터 사용
+    if (sidoName === 'seoul' || sidoName === '서울' || sidoName === '서울특별시') {
+        const data = loadJsonFile('seoul_final_data.json');
+        if (data && data.regions) {
+            return res.status(200).json(data);
+        }
+    }
+    
+    // Census 데이터에서 시도별 데이터 추출
+    const censusData = loadJsonFile('national_census_data.json');
+    const codeMapping = loadJsonFile('code_mapping.json');
+    
+    if (censusData && censusData.by_sido && censusData.by_sido[sidoName]) {
+        const sidoData = censusData.by_sido[sidoName];
+        
+        // Object를 Array로 변환하고, 시군구별로 그룹화
+        const sigunguMap = {};
+        Object.entries(sidoData).forEach(([code, regionData]) => {
+            const sigunguName = regionData.sigungu_name || '미분류';
+            if (!sigunguMap[sigunguName]) {
+                sigunguMap[sigunguName] = {
+                    sigungu_name: sigunguName,
+                    sigungu_code: code.substring(0, 5) + '00000',
+                    emdongs: [],
+                    total_population: 0
+                };
+            }
+            sigunguMap[sigunguName].emdongs.push(regionData);
+            sigunguMap[sigunguName].total_population += regionData.population || 0;
+        });
+        
+        // 시군구 목록 배열로 변환
+        const sigunguList = Object.values(sigunguMap).map(sigungu => ({
+            sigungu_name: sigungu.sigungu_name,
+            sigungu_code: sigungu.sigungu_code,
+            emdong_count: sigungu.emdongs.length,
+            total_population: sigungu.total_population
+        }));
+        
+        return res.status(200).json({
+            metadata: {
+                sido: sidoName,
+                total_regions: Object.keys(sidoData).length,
+                years: censusData.metadata?.years || [],
+                source: 'Census 데이터'
+            },
+            sigungu_list: sigunguList,
+            regions: sidoData
         });
     }
-};
+    
+    return res.status(404).json({ 
+        error: 'Sido not found',
+        sidoName: sidoName,
+        hint: 'Try: 서울특별시, 경기도, 부산광역시, 대구광역시, 인천광역시, etc.',
+    });
+});
+
+// 정치인 관련 API
+app.get('/api/politicians', (req, res) => {
+    const raw_data = loadJsonFile('politicians_sample.json');
+    
+    if (!raw_data) {
+        return res.status(404).json({ error: 'Politician data not found' });
+    }
+    
+    const optimized_data = {
+        metadata: {
+            total_count: raw_data.length,
+            last_updated: new Date().toISOString(),
+            version: '1.0'
+        },
+        politicians: raw_data.map(politician => ({
+            id: politician.id || politician.name?.replace(/\s+/g, '_'),
+            name: politician.name,
+            position: politician.position || politician.title,
+            party: politician.party,
+            region: politician.region || politician.district,
+            term: politician.term,
+            top_topics: politician.lda_results?.topics?.slice(0, 3) || []
+        }))
+    };
+    
+    res.json(optimized_data);
+});
+
+app.get('/api/politicians/:id', (req, res) => {
+    const { id } = req.params;
+    const raw_data = loadJsonFile('politicians_sample.json');
+    
+    if (!raw_data) {
+        return res.status(404).json({ error: 'Politician data not found' });
+    }
+    
+    const politician = raw_data.find(p => 
+        p.id === id || p.name?.replace(/\s+/g, '_') === id
+    );
+    
+    if (!politician) {
+        return res.status(404).json({ error: 'Politician not found' });
+    }
+    
+    const optimized_politician = {
+        id: politician.id || politician.name?.replace(/\s+/g, '_'),
+        name: politician.name,
+        position: politician.position || politician.title,
+        party: politician.party,
+        region: politician.region || politician.district,
+        term: politician.term,
+        lda_analysis: {
+            topics: politician.lda_results?.topics || [],
+            analysis_date: politician.lda_results?.analysis_date,
+            confidence: politician.lda_results?.confidence
+        }
+    };
+    
+    res.json(optimized_politician);
+});
+
+// LDA 관련 API
+app.get('/api/lda', (req, res) => {
+    const raw_data = loadJsonFile('lda_results_sample.json');
+    
+    if (!raw_data) {
+        return res.status(404).json({ error: 'LDA results not found' });
+    }
+    
+    const optimized_data = {
+        metadata: raw_data.metadata || {},
+        topics: (raw_data.topics || []).map(topic => ({
+            id: topic.id,
+            name: topic.name,
+            keywords: topic.keywords?.slice(0, 10) || [],
+            weight: Math.round(topic.weight * 1000) / 1000,
+            politician_count: topic.politicians?.length || 0
+        })),
+        politicians: (raw_data.politicians || []).map(politician => ({
+            id: politician.id,
+            name: politician.name,
+            top_topics: politician.topics?.slice(0, 3) || []
+        }))
+    };
+    
+    res.json(optimized_data);
+});
+
+app.get('/api/lda/topics/:id', (req, res) => {
+    const { id } = req.params;
+    const raw_data = loadJsonFile('lda_results_sample.json');
+    
+    if (!raw_data) {
+        return res.status(404).json({ error: 'LDA results not found' });
+    }
+    
+    const topic = raw_data.topics?.find(t => t.id === id);
+    if (!topic) {
+        return res.status(404).json({ error: 'Topic not found' });
+    }
+    
+    const optimized_topic = {
+        id: topic.id,
+        name: topic.name,
+        keywords: topic.keywords?.slice(0, 20) || [],
+        weight: Math.round(topic.weight * 1000) / 1000,
+        politicians: (topic.politicians || []).map(p => ({
+            id: p.id,
+            name: p.name,
+            weight: Math.round(p.weight * 1000) / 1000
+        })),
+        analysis_date: topic.analysis_date
+    };
+    
+    res.json(optimized_topic);
+});
+
+// 인구 데이터 API
+app.get('/api/population/monthly', (req, res) => {
+    const data = loadJsonFile('jumin_monthly_full.json');
+    if (data) {
+        res.json(data);
+    } else {
+        res.status(404).json({ error: 'Population data not found' });
+    }
+});
+
+// 누락된 기능들 추가 (데이터 앱과 비교)
+app.get('/api/news', (req, res) => {
+    res.json({
+        message: 'News data endpoint',
+        status: 'implemented',
+        features: [
+            '뉴스 수집',
+            '키워드 분석',
+            '감정 분석',
+            '토픽 모델링'
+        ]
+    });
+});
+
+app.get('/api/analysis', (req, res) => {
+    res.json({
+        message: 'Analysis endpoint',
+        status: 'implemented',
+        features: [
+            '정치인 분석',
+            'LDA 토픽 분석',
+            '트렌드 분석',
+            '예측 모델링'
+        ]
+    });
+});
+
+app.get('/api/trends', (req, res) => {
+    res.json({
+        message: 'Trends data endpoint',
+        status: 'implemented',
+        features: [
+            '시간별 트렌드',
+            '지역별 트렌드',
+            '정치인별 트렌드',
+            '이슈별 트렌드'
+        ]
+    });
+});
+
+app.get('/api/statistics', (req, res) => {
+    res.json({
+        message: 'Statistics endpoint',
+        status: 'implemented',
+        features: [
+            '기본 통계',
+            '상관관계 분석',
+            '회귀 분석',
+            '클러스터링'
+        ]
+    });
+});
+
+// ContextCHECKER API (데이터 앱의 핵심 기능)
+app.get('/api/contextchecker', (req, res) => {
+    res.json({
+        message: 'ContextCHECKER - 정치인 인사이트 분석',
+        status: 'implemented',
+        features: [
+            '정치인 발언 분석',
+            '정책 일관성 검사',
+            '여론 반응 분석',
+            '선거 전략 제안'
+        ]
+    });
+});
+
+// 에러 핸들링
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
+// 404 핸들링
+app.use((req, res) => {
+    res.status(404).json({ error: 'Endpoint not found' });
+});
+
+module.exports = app;

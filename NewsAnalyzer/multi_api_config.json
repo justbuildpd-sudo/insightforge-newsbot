@@ -1,0 +1,45 @@
+{
+  "api_accounts": [
+    {
+      "id": "context_checker_4",
+      "client_id": "ULDLTGiPvrrPBgbuydSm",
+      "client_secret": "uO5mu7UQBg",
+      "daily_limit": 25000,
+      "enabled": true,
+      "priority": 1,
+      "description": "컨텍스트체커4 (기존 계정)"
+    },
+    {
+      "id": "context_checker_2", 
+      "client_id": "kXwlSsFmb055ku9rWyx1",
+      "client_secret": "JZqw_LTiq_",
+      "daily_limit": 25000,
+      "enabled": true,
+      "priority": 2,
+      "description": "컨텍스트체커2 (새 계정)"
+    },
+    {
+      "id": "context_checker_3",
+      "client_id": "oKdwFxoTAls9OME8Jt_w", 
+      "client_secret": "erb60AY8dh",
+      "daily_limit": 25000,
+      "enabled": true,
+      "priority": 3,
+      "description": "컨텍스트체커3 (새 계정)"
+    }
+  ],
+  "collection_settings": {
+    "max_total_daily_calls": 75000,
+    "delay_between_requests": 0.1,
+    "batch_size": 100,
+    "retry_attempts": 3,
+    "api_rotation_strategy": "round_robin",
+    "fallback_enabled": true
+  },
+  "monitoring": {
+    "log_api_usage": true,
+    "alert_on_limit": true,
+    "daily_reset_time": "00:00",
+    "usage_report_interval": 3600
+  }
+}

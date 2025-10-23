@@ -31,10 +31,12 @@ ENV PYTHONUNBUFFERED=1
 ENV COLLECTION_MODE=daily
 
 # 실행 모드에 따라 스크립트 선택
-# COLLECTION_MODE: daily (일일 수집) | historical (과거 데이터)
-CMD if [ "$COLLECTION_MODE" = "historical" ]; then \
-        python3 scripts/historical_collector.py; \
-    else \
+# COLLECTION_MODE: enhanced_historical (다중 API 과거 데이터) | daily (일일 수집) | api_management (API 관리)
+CMD if [ "$COLLECTION_MODE" = "enhanced_historical" ]; then \
+        python3 scripts/enhanced_historical_collector.py; \
+    elif [ "$COLLECTION_MODE" = "daily" ]; then \
         python3 scripts/scheduler.py; \
+    else \
+        python3 scripts/api_management_server.py; \
     fi
 

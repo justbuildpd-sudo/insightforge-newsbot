@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InsightForge - 지역 데이터 분석</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .region-selected {
+            background-color: #dbeafe !important;
+            border-color: #93c5fd !important;
+        }
+        .sido-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .sigungu-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .emdong-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .chart-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 헤더 -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-800">InsightForge</h1>
+                    <span class="ml-3 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                        지역 데이터 분석
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        🔄 새로고침
+                    </button>
+                    <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        📊 데이터 내보내기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 로딩 상태 -->
+        <div id="loading" class="text-center py-12 hidden">
+            <div class="loading inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+            <p class="mt-4 text-gray-600">데이터를 불러오는 중...</p>
+        </div>
+
+        <!-- 에러 상태 -->
+        <div id="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg hidden">
+            <p id="errorMessage"></p>
+        </div>
+
+        <!-- 메인 콘텐츠 -->
+        <div id="content" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- 지역 선택 패널 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">지역 선택</h2>
+                    <div id="sido-list" class="space-y-3">
+                        <!-- 시도 목록이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+
+                <!-- 차트 패널 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">인구 변화 차트</h2>
+                    <div id="chart-container" class="chart-container min-h-96 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">📊</div>
+                            <p class="text-lg">지역을 선택하면 차트가 표시됩니다</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 통계 정보 -->
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">총 시도</h3>
+                    <p id="totalSido" class="text-3xl font-bold text-blue-600">-</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">총 시군구</h3>
+                    <p id="totalSigungu" class="text-3xl font-bold text-green-600">-</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">총 동</h3>
+                    <p id="totalEmdong" class="text-3xl font-bold text-purple-600">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
