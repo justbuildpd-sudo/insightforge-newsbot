@@ -1,5 +1,5 @@
 // InsightForge 웹 애플리케이션 - 개선된 디자인과 데이터 로드
-// Version: 2.0.0 - Cache busting update
+// Version: 3.0.0 - Enhanced UI with comprehensive data integration
 const API_BASE = 'https://insightforge-newsbot.vercel.app';
 
 // 전역 변수
@@ -56,7 +56,7 @@ async function fetchAPI(url) {
 // 시도 데이터 로드
 async function loadSidoData() {
     try {
-        console.log('📊 시도 데이터 로드 중... (v2.0.0)');
+        console.log('📊 시도 데이터 로드 중... (v3.0.0)');
         console.log('🔗 API URL:', `${API_BASE}/api/sido`);
         const data = await fetchAPI(`${API_BASE}/api/sido`);
         
@@ -64,6 +64,7 @@ async function loadSidoData() {
             allSido = data.sido_list;
             console.log(`✅ 시도 데이터 로드 완료: ${allSido.length}개`);
             renderSidoList();
+            updateDashboardStats();
         } else {
             throw new Error('시도 데이터 구조가 올바르지 않습니다.');
         }
@@ -71,6 +72,21 @@ async function loadSidoData() {
         console.error('❌ 시도 데이터 로드 실패:', error);
         showError(`시도 데이터 로드 실패: ${error.message}`);
     }
+}
+
+// 대시보드 통계 업데이트
+function updateDashboardStats() {
+    const totalSidoEl = document.getElementById('totalSido');
+    const totalSigunguEl = document.getElementById('totalSigungu');
+    const totalEmdongEl = document.getElementById('totalEmdong');
+    const activeRegionsEl = document.getElementById('activeRegions');
+    const lastUpdateEl = document.getElementById('lastUpdate');
+    
+    if (totalSidoEl) totalSidoEl.textContent = allSido.length;
+    if (totalSigunguEl) totalSigunguEl.textContent = allSigungu.length;
+    if (totalEmdongEl) totalEmdongEl.textContent = allEmdong.length;
+    if (activeRegionsEl) activeRegionsEl.textContent = allSido.length;
+    if (lastUpdateEl) lastUpdateEl.textContent = new Date().toLocaleString('ko-KR');
 }
 
 // 시도 목록 렌더링
@@ -82,17 +98,20 @@ function renderSidoList() {
     
     allSido.forEach(sido => {
         const sidoItem = document.createElement('div');
-        sidoItem.className = 'sido-item bg-white border border-gray-200 rounded-lg p-4 mb-3 cursor-pointer hover:shadow-md transition-shadow';
+        sidoItem.className = 'sido-item bg-white border border-gray-200 rounded-xl p-4 mb-3 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-300';
         sidoItem.innerHTML = `
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-800">${sido.sido_name}</h3>
-                    <p class="text-sm text-gray-600">${sido.total_regions}개 지역</p>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-map-marker-alt text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">${sido.sido_name}</h3>
+                        <p class="text-sm text-gray-600">${sido.total_regions}개 지역</p>
+                    </div>
                 </div>
-                <div class="text-gray-400">
-                    <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
+                <div class="text-gray-400 transition-transform duration-200">
+                    <i class="fas fa-chevron-right"></i>
                 </div>
             </div>
         `;
@@ -118,6 +137,9 @@ async function toggleSido(sidoCode) {
         // 펼치기
         expandedSidos.add(sidoCode);
         await loadSigunguList(sido.name);
+        
+        // 종합 데이터 로드
+        await loadComprehensiveData(sidoCode);
     }
 }
 
@@ -402,6 +424,50 @@ function renderTimeseriesChart(regionData, regionCode) {
         .text(`${regionCode} 인구 변화`);
 
     console.log('✅ 차트 렌더링 완료');
+}
+
+// 종합 데이터 로드 (새로운 API 활용)
+async function loadComprehensiveData(regionCode) {
+    try {
+        console.log('📊 종합 데이터 로드 중...', regionCode);
+        const data = await fetchAPI(`${API_BASE}/api/comprehensive?region_code=${regionCode}`);
+        
+        if (data) {
+            updateComprehensiveStats(data);
+            console.log('✅ 종합 데이터 로드 완료');
+        }
+    } catch (error) {
+        console.error('❌ 종합 데이터 로드 실패:', error);
+    }
+}
+
+// 종합 통계 업데이트
+function updateComprehensiveStats(data) {
+    const totalPopulationEl = document.getElementById('totalPopulation');
+    const populationDensityEl = document.getElementById('populationDensity');
+    const growthRateEl = document.getElementById('growthRate');
+    const gdpEl = document.getElementById('gdp');
+    const gdpPerCapitaEl = document.getElementById('gdpPerCapita');
+    const gdpGrowthEl = document.getElementById('gdpGrowth');
+    
+    if (totalPopulationEl && data.overview) {
+        totalPopulationEl.textContent = data.overview.population?.toLocaleString() || '-';
+    }
+    if (populationDensityEl && data.overview) {
+        populationDensityEl.textContent = data.overview.density?.toLocaleString() || '-';
+    }
+    if (growthRateEl && data.indicators?.population) {
+        growthRateEl.textContent = `${data.indicators.population.growth_rate || 0}%`;
+    }
+    if (gdpEl && data.overview) {
+        gdpEl.textContent = data.overview.gdp ? `${(data.overview.gdp / 1000000000000).toFixed(1)}조원` : '-';
+    }
+    if (gdpPerCapitaEl && data.overview) {
+        gdpPerCapitaEl.textContent = data.overview.gdp_per_capita ? `${(data.overview.gdp_per_capita / 10000).toFixed(0)}만원` : '-';
+    }
+    if (gdpGrowthEl && data.indicators?.economy) {
+        gdpGrowthEl.textContent = `${data.indicators.economy.gdp_growth || 0}%`;
+    }
 }
 
 // 초기화
