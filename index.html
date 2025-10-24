@@ -118,7 +118,9 @@
     <script>
         // 대시보드로 이동
         function goToDashboard() {
-            window.location.href = '/dashboard.html';
+            console.log('🚀 대시보드로 이동 중...');
+            console.log('🔗 이동할 URL: /dashboard.html');
+            window.location.href = './dashboard.html';
         }
 
         // 기능 섹션으로 스크롤
@@ -134,6 +136,13 @@
             console.log('✅ 메인페이지: index.html');
             console.log('✅ 대시보드: dashboard.html');
             console.log('✅ 완전히 분리된 구조');
+            
+            // 버튼 클릭 이벤트 확인
+            const buttons = document.querySelectorAll('button[onclick="goToDashboard()"]');
+            console.log('🔘 대시보드 버튼 개수:', buttons.length);
+            buttons.forEach((btn, index) => {
+                console.log(`🔘 버튼 ${index + 1}:`, btn.textContent);
+            });
         });
     </script>
 </body>
