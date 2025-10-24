@@ -175,18 +175,17 @@
             if (errorEl) errorEl.classList.add('hidden');
         }
 
-        // API 호출 헬퍼 - 극강 캐시 버스팅
-        async function fetchAPI(url) {
+        // JSON 파일 직접 로드 - API 서버 대신 정적 파일 사용
+        async function loadJsonFile(filename) {
             try {
-                // 극강 캐시 버스팅
                 const timestamp = Date.now();
                 const random = Math.random().toString(36).substring(7);
-                const cacheBuster = `?v=12.0.0&t=${timestamp}&r=${random}&cache=busted&force=reload&no-cache=true&main=file`;
-                const finalUrl = url + cacheBuster;
+                const cacheBuster = `?v=12.0.0&t=${timestamp}&r=${random}&cache=busted&force=reload&no-cache=true&static=file`;
+                const finalUrl = `./data/${filename}${cacheBuster}`;
                 
-                console.log('🚀 API 호출 (MAIN v12.0.0):', finalUrl);
-                console.log('✅ localhost:3002 완전 제거됨');
-                console.log('✅ Vercel API 사용');
+                console.log('🚀 JSON 파일 직접 로드 (MAIN v12.0.0):', finalUrl);
+                console.log('✅ API 서버 대신 정적 파일 사용');
+                console.log('✅ Vercel 정적 파일 서빙 활용');
                 console.log('✅ 메인 파일명 사용');
                 
                 const response = await fetch(finalUrl, {
@@ -204,22 +203,22 @@
                 }
                 return await response.json();
             } catch (error) {
-                console.error('API 호출 오류:', error);
+                console.error('JSON 파일 로드 오류:', error);
                 throw error;
             }
         }
 
-        // 시도 데이터 로드
+        // 시도 데이터 로드 - JSON 파일 직접 로드
         async function loadSidoData() {
             try {
                 console.log('📊 시도 데이터 로드 중... (v12.0.0 - MAIN)');
-                console.log('🔗 API URL:', `${API_BASE}/api/sido`);
+                console.log('🔗 JSON 파일:', './data/sido_list.json');
                 console.log('🚨 메인 파일명으로 캐시 완전 우회');
-                console.log('✅ localhost:3002 완전 제거됨');
-                console.log('✅ Vercel 서버리스 함수 정상 작동');
+                console.log('✅ API 서버 대신 정적 파일 사용');
+                console.log('✅ Vercel 정적 파일 서빙 활용');
                 
-                const data = await fetchAPI(`${API_BASE}/api/sido`);
-                console.log('📥 API 응답 데이터:', data);
+                const data = await loadJsonFile('sido_list.json');
+                console.log('📥 JSON 파일 데이터:', data);
                 
                 if (data && data.sido_list) {
                     allSido = data.sido_list;
