@@ -381,14 +381,17 @@
                 console.log('✅ Vercel 서버리스 함수 정상 작동');
                 
                 const data = await fetchAPI(`${API_BASE}/api/sido`);
+                console.log('📥 API 응답 데이터:', data);
                 
                 if (data && data.sido_list) {
                     allSido = data.sido_list;
                     console.log(`✅ 시도 데이터 로드 완료: ${allSido.length}개`);
+                    console.log('📋 시도 목록:', allSido.map(s => s.sido_name));
                     renderSidoList();
                     updateDashboardStats();
                     showContent();
                 } else {
+                    console.error('❌ 데이터 구조 오류:', data);
                     throw new Error('시도 데이터 구조가 올바르지 않습니다.');
                 }
             } catch (error) {
@@ -400,8 +403,12 @@
         // 시도 목록 렌더링
         function renderSidoList() {
             const container = document.getElementById('sidoList');
-            if (!container) return;
+            if (!container) {
+                console.error('❌ sidoList 컨테이너를 찾을 수 없습니다.');
+                return;
+            }
             
+            console.log('🎨 시도 목록 렌더링 시작:', allSido.length, '개');
             container.innerHTML = '';
             
             allSido.forEach(sido => {
@@ -420,6 +427,8 @@
                 sidoEl.addEventListener('click', () => toggleSido(sido.code));
                 container.appendChild(sidoEl);
             });
+            
+            console.log('✅ 시도 목록 렌더링 완료');
         }
 
         // 시군구 목록 로드
