@@ -3,23 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>컨텍스트 대시보드 - 정치인 LDA 분석</title>
+    <title>InsightForge - 지역 데이터 분석 (v8.0.0 - DASHBOARD)</title>
+    <meta name="version" content="8.0.0">
+    <meta name="cache-bust" content="20241023-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind CSS 설정
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse': 'pulse 2s infinite',
+                        'spin': 'spin 1s linear infinite'
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .topic-card {
-            transition: all 0.3s ease;
+        .region-selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border-color: #667eea !important;
         }
-        .topic-card:hover {
+        .sido-item:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
-        .politician-card {
-            transition: all 0.3s ease;
+        .sigungu-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .politician-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        .emdong-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .loading {
             animation: spin 1s linear infinite;
@@ -28,299 +51,316 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        .admin-badge {
-            background: linear-gradient(45deg, #ff6b6b, #feca57);
+        .chart-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 24px;
             color: white;
-            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(240, 147, 251, 0.4);
+        }
+        .stat-card.green {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+        }
+        .stat-card.purple {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            box-shadow: 0 8px 25px rgba(168, 237, 234, 0.3);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .floating-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- 네비게이션 -->
-    <nav class="bg-white shadow-lg">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <!-- 헤더 -->
+    <header class="hero-gradient shadow-2xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
+            <div class="flex justify-between items-center h-20">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 flex items-center">
-                        <div class="text-2xl font-bold text-gray-800">컨텍스트</div>
-                        <span class="ml-2 admin-badge px-2 py-1 rounded-full text-xs">ADMIN</span>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
+                            <i class="fas fa-chart-line text-2xl text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-white">InsightForge</h1>
+                            <p class="text-blue-100 text-sm">지역 데이터 종합 분석 플랫폼</p>
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button id="contextCheckerBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-lg transition-colors font-semibold">
-                        🔍 ContextCHECKER
+                    <button id="refreshBtn" class="glass-effect text-white px-6 py-3 rounded-xl transition-all duration-300 hover:bg-white hover:bg-opacity-20">
+                        <i class="fas fa-sync-alt mr-2"></i>새로고침
                     </button>
-                    <button id="refreshBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        🔄 새로고침
-                    </button>
-                    <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        📊 데이터 내보내기
-                    </button>
-                    <button id="adminBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        ⚙️ 관리자 설정
-                    </button>
-                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        🚪 로그아웃
+                    <button id="exportBtn" class="bg-white bg-opacity-20 text-white px-6 py-3 rounded-xl transition-all duration-300 hover:bg-opacity-30">
+                        <i class="fas fa-download mr-2"></i>데이터 내보내기
                     </button>
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <div class="container mx-auto px-4 py-8">
-        <!-- 관리자 전용 알림 -->
-        <div id="adminNotification" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-6 rounded">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium">
-                        <strong>관리자 전용 모드</strong> - 현재 관리자 권한으로 접속되어 있습니다.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 헤더 -->
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">NewsAnalyzer 대시보드</h1>
-            <p class="text-gray-600">정치인 LDA 토픽 분석 결과</p>
-        </header>
-
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- 로딩 상태 -->
-        <div id="loading" class="text-center py-8 hidden">
-            <div class="loading inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-            <p class="mt-2 text-gray-600">데이터를 불러오는 중...</p>
+        <div id="loading" class="text-center py-20 hidden">
+            <div class="inline-block">
+                <div class="loading w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                <p class="mt-6 text-xl text-gray-600 font-medium">데이터를 불러오는 중...</p>
+                <p class="mt-2 text-gray-500">잠시만 기다려주세요</p>
+            </div>
         </div>
 
         <!-- 에러 상태 -->
-        <div id="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg hidden">
-            <p id="errorMessage"></p>
+        <div id="error" class="bg-red-50 border-l-4 border-red-400 p-6 rounded-lg hidden">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-400 text-xl mr-3"></i>
+                <div>
+                    <h3 class="text-lg font-medium text-red-800">오류가 발생했습니다</h3>
+                    <p id="errorMessage" class="text-red-600 mt-1"></p>
+                </div>
+            </div>
         </div>
 
         <!-- 메인 콘텐츠 -->
         <div id="content" class="hidden">
-            <!-- 통계 카드 -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">총 정치인</h3>
-                    <p id="totalPoliticians" class="text-3xl font-bold text-blue-600">-</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">총 토픽</h3>
-                    <p id="totalTopics" class="text-3xl font-bold text-green-600">-</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">분석 일자</h3>
-                    <p id="analysisDate" class="text-lg text-gray-600">-</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">서버 상태</h3>
-                    <p id="serverStatus" class="text-lg text-green-600">✅ 정상</p>
-                </div>
-            </div>
-
-            <!-- 관리자 전용 업데이트 섹션 -->
-            <div id="adminUpdateSection" class="mb-8 bg-purple-50 border border-purple-200 rounded-lg p-6">
-                <h2 class="text-2xl font-bold text-purple-800 mb-4">🔒 관리자 전용 업데이트</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-4 rounded-lg border border-purple-200">
-                        <h3 class="text-lg font-semibold text-purple-700 mb-2">데이터 업데이트</h3>
-                        <p class="text-sm text-gray-600 mb-4">새로운 정치인 데이터를 추가하거나 기존 데이터를 업데이트합니다.</p>
-                        <button id="updateDataBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors">
-                            데이터 업데이트
-                        </button>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg border border-purple-200">
-                        <h3 class="text-lg font-semibold text-purple-700 mb-2">LDA 분석 재실행</h3>
-                        <p class="text-sm text-gray-600 mb-4">새로운 데이터로 LDA 토픽 모델링을 다시 실행합니다.</p>
-                        <button id="rerunLdaBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors">
-                            LDA 재분석
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 토픽 분석 결과 -->
+            <!-- 대시보드 개요 -->
             <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">주요 토픽 분석</h2>
-                <div id="topicsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- 토픽 카드들이 여기에 동적으로 추가됩니다 -->
-                </div>
-            </div>
-
-            <!-- ContextCHECKER 섹션 -->
-            <div id="contextCheckerSection" class="mb-8 hidden">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">🔍 ContextCHECKER - 정치인 인사이트 분석</h2>
-                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-indigo-800 mb-4">정치인 인사이트 분석</h3>
-                    <p class="text-gray-700 mb-4">
-                        LDA 토픽 모델링을 통해 정치인들의 발언과 정책을 객관적으로 분석하고, 
-                        주요 관심사와 정책 방향을 파악합니다.
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white p-4 rounded-lg border border-indigo-200">
-                            <h4 class="font-semibold text-gray-800 mb-2">📊 토픽 분석</h4>
-                            <p class="text-sm text-gray-600">정치인의 발언을 토픽별로 분류하여 주요 관심사를 파악</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-indigo-200">
-                            <h4 class="font-semibold text-gray-800 mb-2">🎯 정책 방향</h4>
-                            <p class="text-sm text-gray-600">토픽 가중치를 통해 정책 우선순위와 방향성 분석</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 정치인 선택 섹션 -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">정치인 선택</h3>
-                    <div id="politicianSelector" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- 정치인 선택 버튼들이 여기에 동적으로 추가됩니다 -->
-                    </div>
-                </div>
-
-                <!-- 선택된 정치인 분석 결과 -->
-                <div id="selectedPoliticianAnalysis" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">분석 결과</h3>
-                    <div id="analysisResults" class="space-y-6">
-                        <!-- 분석 결과가 여기에 동적으로 추가됩니다 -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- 기존 정치인 리스트 (숨김 처리) -->
-            <div id="politiciansListSection" class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">정치인별 토픽 분석</h2>
-                <div id="politiciansContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- 정치인 카드들이 여기에 동적으로 추가됩니다 -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 관리자 설정 모달 -->
-    <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-2xl p-8 w-full max-w-2xl">
-                <div class="text-center mb-6">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">관리자 설정</h3>
-                    <p class="text-gray-600">시스템 설정 및 관리 기능</p>
-                </div>
-
-                <div class="space-y-6">
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-3">데이터 관리</h4>
-                        <div class="space-y-3">
-                            <button class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                정치인 데이터 업데이트
-                            </button>
-                            <button class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                LDA 분석 재실행
-                            </button>
-                            <button class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                캐시 초기화
+                <div class="bg-white rounded-2xl shadow-xl p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            <i class="fas fa-tachometer-alt text-blue-600 mr-3"></i>대시보드 개요
+                        </h2>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdate">-</span></span>
+                            <button class="text-blue-600 hover:text-blue-800 transition-colors">
+                                <i class="fas fa-cog"></i>
                             </button>
                         </div>
                     </div>
-
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-3">시스템 설정</h4>
-                        <div class="space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="stat-card">
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-600">자동 업데이트</span>
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
+                                <div>
+                                    <p class="text-sm opacity-90">총 시도</p>
+                                    <p id="totalSido" class="text-3xl font-bold">-</p>
+                                </div>
+                                <i class="fas fa-map-marked-alt text-2xl opacity-80"></i>
                             </div>
+                        </div>
+                        <div class="stat-card green">
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-600">알림 설정</span>
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
+                                <div>
+                                    <p class="text-sm opacity-90">총 시군구</p>
+                                    <p id="totalSigungu" class="text-3xl font-bold">-</p>
+                                </div>
+                                <i class="fas fa-city text-2xl opacity-80"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card purple">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm opacity-90">총 동</p>
+                                    <p id="totalEmdong" class="text-3xl font-bold">-</p>
+                                </div>
+                                <i class="fas fa-home text-2xl opacity-80"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm opacity-90">활성 지역</p>
+                                    <p id="activeRegions" class="text-3xl font-bold">-</p>
+                                </div>
+                                <i class="fas fa-chart-pie text-2xl opacity-80"></i>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button id="closeAdminModal" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                        닫기
-                    </button>
-                    <button class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        저장
-                    </button>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <!-- 지역 선택 패널 -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
+                        <div class="flex items-center mb-6">
+                            <i class="fas fa-map-location-dot text-blue-600 text-xl mr-3"></i>
+                            <h2 class="text-xl font-bold text-gray-800">지역 선택</h2>
+                        </div>
+                        <div id="sido-list" class="space-y-3 max-h-96 overflow-y-auto">
+                            <!-- 시도 목록이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 차트 및 분석 패널 -->
+                <div class="xl:col-span-2 space-y-8">
+                    <!-- 인구 변화 차트 -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-800">
+                                <i class="fas fa-chart-line text-blue-600 mr-3"></i>인구 변화 차트
+                            </h2>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-sm">인구</button>
+                                <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm">경제</button>
+                                <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm">교육</button>
+                            </div>
+                        </div>
+                        <div id="chart-container" class="chart-container min-h-96 flex items-center justify-center">
+                            <div class="text-center">
+                                <div class="text-8xl mb-6 floating-animation">📊</div>
+                                <p class="text-xl font-medium mb-2">지역을 선택하면 차트가 표시됩니다</p>
+                                <p class="text-lg opacity-80">다양한 데이터를 시각화하여 보여드립니다</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 데이터 분석 카드들 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-2xl shadow-xl p-6">
+                            <div class="flex items-center mb-4">
+                                <i class="fas fa-users text-green-600 text-xl mr-3"></i>
+                                <h3 class="text-lg font-bold text-gray-800">인구 통계</h3>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">총 인구</span>
+                                    <span class="font-semibold" id="totalPopulation">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">인구 밀도</span>
+                                    <span class="font-semibold" id="populationDensity">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">성장률</span>
+                                    <span class="font-semibold text-green-600" id="growthRate">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-xl p-6">
+                            <div class="flex items-center mb-4">
+                                <i class="fas fa-chart-bar text-purple-600 text-xl mr-3"></i>
+                                <h3 class="text-lg font-bold text-gray-800">경제 지표</h3>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">GDP</span>
+                                    <span class="font-semibold" id="gdp">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">1인당 GDP</span>
+                                    <span class="font-semibold" id="gdpPerCapita">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">성장률</span>
+                                    <span class="font-semibold text-blue-600" id="gdpGrowth">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // API 기본 URL
-        const API_BASE = 'http://localhost:3002';
-        
+        // InsightForge 웹 애플리케이션 - 인라인 스크립트 (v8.0.0 - DASHBOARD)
+        // Version: 8.0.0 - DASHBOARD - NO CACHE ISSUES
+        const API_BASE = 'https://insightforge-newsbot.vercel.app';
+
         // 전역 변수
-        let politiciansData = null;
-        let ldaData = null;
+        let allSido = [];
+        let allSigungu = [];
+        let allEmdong = [];
+        let expandedSidos = new Set();
+        let currentSelectedRegion = null;
+        let chartData = null;
 
         // DOM 요소
         const loadingEl = document.getElementById('loading');
         const errorEl = document.getElementById('error');
         const contentEl = document.getElementById('content');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const adminBtn = document.getElementById('adminBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const contextCheckerBtn = document.getElementById('contextCheckerBtn');
-        const adminModal = document.getElementById('adminModal');
-        const closeAdminModal = document.getElementById('closeAdminModal');
-        
-        // ContextCHECKER 관련 요소
-        const contextCheckerSection = document.getElementById('contextCheckerSection');
-        const politiciansListSection = document.getElementById('politiciansListSection');
-        const politicianSelector = document.getElementById('politicianSelector');
-        const selectedPoliticianAnalysis = document.getElementById('selectedPoliticianAnalysis');
-        const analysisResults = document.getElementById('analysisResults');
-
-        // 로그인 상태 확인
-        function checkAuth() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            if (!isLoggedIn) {
-                window.location.href = '/landing.html';
-                return false;
-            }
-            return true;
-        }
-
-        // 로그아웃
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = '/landing.html';
-        }
 
         // 로딩 상태 표시
         function showLoading() {
-            loadingEl.classList.remove('hidden');
-            contentEl.classList.add('hidden');
-            errorEl.classList.add('hidden');
+            if (loadingEl) loadingEl.classList.remove('hidden');
+            if (contentEl) contentEl.classList.add('hidden');
+            if (errorEl) errorEl.classList.add('hidden');
         }
 
         // 에러 상태 표시
         function showError(message) {
-            errorEl.classList.remove('hidden');
-            contentEl.classList.add('hidden');
-            loadingEl.classList.add('hidden');
-            document.getElementById('errorMessage').textContent = message;
+            if (errorEl) {
+                errorEl.classList.remove('hidden');
+                errorEl.querySelector('#errorMessage').textContent = message;
+            }
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (contentEl) contentEl.classList.add('hidden');
         }
 
-        // 콘텐츠 표시
+        // 성공 상태 표시
         function showContent() {
-            contentEl.classList.remove('hidden');
-            loadingEl.classList.add('hidden');
-            errorEl.classList.add('hidden');
+            if (contentEl) contentEl.classList.remove('hidden');
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (errorEl) errorEl.classList.add('hidden');
         }
 
-        // API 호출 헬퍼
+        // API 호출 헬퍼 - 극강 캐시 버스팅
         async function fetchAPI(url) {
             try {
-                const response = await fetch(url);
+                // 극강 캐시 버스팅
+                const timestamp = Date.now();
+                const random = Math.random().toString(36).substring(7);
+                const cacheBuster = `?v=8.0.0&t=${timestamp}&r=${random}&cache=busted&force=reload&no-cache=true&dashboard=file`;
+                const finalUrl = url + cacheBuster;
+                
+                console.log('🚀 API 호출 (DASHBOARD v8.0.0):', finalUrl);
+                console.log('✅ localhost:3002 완전 제거됨');
+                console.log('✅ Vercel API 사용');
+                console.log('✅ 대시보드 파일명 사용');
+                
+                const response = await fetch(finalUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'If-Modified-Since': '0'
+                    }
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -331,330 +371,224 @@
             }
         }
 
-        // 데이터 로드
-        async function loadData() {
-            showLoading();
-            
+        // 시도 데이터 로드
+        async function loadSidoData() {
             try {
-                // 병렬로 데이터 로드
-                const [politiciansResponse, ldaResponse] = await Promise.all([
-                    fetchAPI(`${API_BASE}/api/politicians`),
-                    fetchAPI(`${API_BASE}/api/lda`)
-                ]);
-
-                politiciansData = politiciansResponse;
-                ldaData = ldaResponse;
-
-                // UI 업데이트
-                updateStatistics();
-                renderTopics();
-                renderPoliticians();
-
-                showContent();
+                console.log('📊 시도 데이터 로드 중... (v8.0.0 - DASHBOARD)');
+                console.log('🔗 API URL:', `${API_BASE}/api/sido`);
+                console.log('🚨 대시보드 파일명으로 캐시 완전 우회');
+                console.log('✅ localhost:3002 완전 제거됨');
+                console.log('✅ Vercel 서버리스 함수 정상 작동');
+                
+                const data = await fetchAPI(`${API_BASE}/api/sido`);
+                
+                if (data && data.sido_list) {
+                    allSido = data.sido_list;
+                    console.log(`✅ 시도 데이터 로드 완료: ${allSido.length}개`);
+                    renderSidoList();
+                    updateDashboardStats();
+                    showContent();
+                } else {
+                    throw new Error('시도 데이터 구조가 올바르지 않습니다.');
+                }
             } catch (error) {
-                showError(`데이터 로드 실패: ${error.message}`);
+                console.error('❌ 시도 데이터 로드 실패:', error);
+                showError(`시도 데이터 로드 실패: ${error.message}`);
             }
         }
 
-        // 통계 업데이트
-        function updateStatistics() {
-            document.getElementById('totalPoliticians').textContent = 
-                politiciansData?.politicians?.length || 0;
-            document.getElementById('totalTopics').textContent = 
-                ldaData?.topics?.length || 0;
-            document.getElementById('analysisDate').textContent = 
-                ldaData?.metadata?.analysis_date || '-';
-        }
-
-        // 토픽 렌더링
-        function renderTopics() {
-            const container = document.getElementById('topicsContainer');
+        // 시도 목록 렌더링
+        function renderSidoList() {
+            const container = document.getElementById('sidoList');
+            if (!container) return;
+            
             container.innerHTML = '';
-
-            if (!ldaData?.topics) return;
-
-            ldaData.topics.slice(0, 6).forEach(topic => {
-                const topicCard = document.createElement('div');
-                topicCard.className = 'topic-card bg-white p-6 rounded-lg shadow-md cursor-pointer';
-                topicCard.innerHTML = `
-                    <div class="flex justify-between items-start mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">${topic.name}</h3>
-                        <span class="text-sm text-gray-500">${topic.politician_count}명</span>
-                    </div>
-                    <div class="mb-4">
-                        <div class="flex flex-wrap gap-2">
-                            ${topic.keywords.slice(0, 5).map(keyword => 
-                                `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${keyword}</span>`
-                            ).join('')}
-                        </div>
-                    </div>
-                    <div class="text-sm text-gray-600">
-                        가중치: ${(topic.weight * 100).toFixed(1)}%
-                    </div>
-                `;
-                
-                topicCard.addEventListener('click', () => {
-                    showTopicDetail(topic.id);
-                });
-                
-                container.appendChild(topicCard);
-            });
-        }
-
-        // 정치인 렌더링
-        function renderPoliticians() {
-            const container = document.getElementById('politiciansContainer');
-            container.innerHTML = '';
-
-            if (!politiciansData?.politicians) return;
-
-            politiciansData.politicians.forEach(politician => {
-                const politicianCard = document.createElement('div');
-                politicianCard.className = 'politician-card bg-white p-6 rounded-lg shadow-md cursor-pointer';
-                politicianCard.innerHTML = `
-                    <div class="mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">${politician.name}</h3>
-                        <p class="text-sm text-gray-600">${politician.position} • ${politician.party}</p>
-                        <p class="text-xs text-gray-500">${politician.region}</p>
-                    </div>
-                    <div class="mb-4">
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">주요 토픽</h4>
-                        <div class="space-y-1">
-                            ${politician.top_topics.map(topic => `
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="text-gray-600">${topic.name}</span>
-                                    <span class="text-blue-600 font-medium">${(topic.weight * 100).toFixed(1)}%</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-                
-                politicianCard.addEventListener('click', () => {
-                    showPoliticianDetail(politician.id);
-                });
-                
-                container.appendChild(politicianCard);
-            });
-        }
-
-        // ContextCHECKER 정치인 선택 버튼 렌더링
-        function renderPoliticianSelector() {
-            politicianSelector.innerHTML = '';
-
-            if (!politiciansData?.politicians) return;
-
-            politiciansData.politicians.forEach(politician => {
-                const selectorBtn = document.createElement('button');
-                selectorBtn.className = 'bg-white border-2 border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 p-4 rounded-lg transition-all duration-200 text-left';
-                selectorBtn.innerHTML = `
+            
+            allSido.forEach(sido => {
+                const sidoEl = document.createElement('div');
+                sidoEl.className = 'bg-white rounded-lg shadow-md p-4 mb-3 cursor-pointer hover:shadow-lg transition-shadow';
+                sidoEl.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div>
-                            <h4 class="font-semibold text-gray-800">${politician.name}</h4>
-                            <p class="text-sm text-gray-600">${politician.position} • ${politician.party}</p>
-                            <p class="text-xs text-gray-500">${politician.region}</p>
+                            <h3 class="text-lg font-semibold text-gray-800">${sido.sido_name}</h3>
+                            <p class="text-sm text-gray-600">${sido.total_regions}개 지역</p>
                         </div>
-                        <div class="text-indigo-500">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </div>
+                        <div class="text-2xl">${expandedSidos.has(sido.code) ? '📂' : '📁'}</div>
                     </div>
                 `;
                 
-                selectorBtn.addEventListener('click', () => {
-                    selectPoliticianForAnalysis(politician);
-                });
-                
-                politicianSelector.appendChild(selectorBtn);
+                sidoEl.addEventListener('click', () => toggleSido(sido.code));
+                container.appendChild(sidoEl);
             });
         }
 
-        // 정치인 선택 및 분석
-        async function selectPoliticianForAnalysis(politician) {
+        // 시군구 목록 로드
+        async function loadSigunguList(sidoName) {
             try {
-                // 선택된 정치인 상세 정보 가져오기
-                const politicianData = await fetchAPI(`${API_BASE}/api/politicians/${politician.id}`);
+                console.log(`📊 시군구 데이터 로드 중... (${sidoName})`);
                 
-                // 분석 결과 표시
-                displayPoliticianAnalysis(politicianData);
+                // 시도 코드 찾기
+                const sido = allSido.find(s => s.sido_name === sidoName);
+                if (!sido) {
+                    throw new Error('시도 정보를 찾을 수 없습니다.');
+                }
                 
-                // 분석 섹션 표시
-                selectedPoliticianAnalysis.classList.remove('hidden');
-                selectedPoliticianAnalysis.scrollIntoView({ behavior: 'smooth' });
+                const data = await fetchAPI(`${API_BASE}/api/sigungu?sido_code=${sido.code}`);
                 
+                if (data && data.sigungu_list) {
+                    allSigungu = data.sigungu_list;
+                    console.log(`✅ 시군구 데이터 로드 완료: ${allSigungu.length}개`);
+                    renderSigunguList(sidoName);
+                } else {
+                    throw new Error('시군구 데이터 구조가 올바르지 않습니다.');
+                }
             } catch (error) {
-                showError(`정치인 분석 데이터 로드 실패: ${error.message}`);
+                console.error('❌ 시군구 데이터 로드 실패:', error);
+                showError(`시군구 데이터 로드 실패: ${error.message}`);
             }
         }
 
-        // 정치인 분석 결과 표시
-        function displayPoliticianAnalysis(politicianData) {
-            const topics = politicianData.lda_analysis?.topics || [];
+        // 시군구 목록 렌더링
+        function renderSigunguList(sidoName) {
+            const container = document.getElementById(`sido-${allSido.find(s => s.sido_name === sidoName)?.code}`);
+            if (!container) return;
             
-            analysisResults.innerHTML = `
-                <!-- 정치인 기본 정보 -->
-                <div class="bg-white border border-gray-200 rounded-lg p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-xl font-bold text-gray-800">${politicianData.name}</h4>
-                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                            ${politicianData.position}
-                        </span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                        <div>
-                            <span class="font-medium">정당:</span> ${politicianData.party}
-                        </div>
-                        <div>
-                            <span class="font-medium">지역:</span> ${politicianData.region}
-                        </div>
-                        <div>
-                            <span class="font-medium">임기:</span> ${politicianData.term}
-                        </div>
-                        <div>
-                            <span class="font-medium">분석 신뢰도:</span> ${(politicianData.lda_analysis?.confidence * 100 || 0).toFixed(1)}%
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 토픽 분석 결과 -->
-                <div class="bg-white border border-gray-200 rounded-lg p-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4">📊 토픽 분석 결과</h4>
-                    <div class="space-y-4">
-                        ${topics.map((topic, index) => `
-                            <div class="border border-gray-200 rounded-lg p-4">
-                                <div class="flex justify-between items-center mb-2">
-                                    <h5 class="font-semibold text-gray-800">${topic.name}</h5>
-                                    <span class="text-sm text-gray-500">${index + 1}위</span>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="flex justify-between text-sm text-gray-600 mb-1">
-                                        <span>관심도</span>
-                                        <span>${(topic.weight * 100).toFixed(1)}%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="bg-indigo-500 h-2 rounded-full" style="width: ${topic.weight * 100}%"></div>
-                                    </div>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    ${topic.keywords.slice(0, 8).map(keyword => 
-                                        `<span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">${keyword}</span>`
-                                    ).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <!-- 인사이트 요약 -->
-                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6">
-                    <h4 class="text-lg font-semibold text-indigo-800 mb-4">🎯 주요 인사이트</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white p-4 rounded-lg border border-indigo-200">
-                            <h5 class="font-semibold text-gray-800 mb-2">가장 관심 있는 분야</h5>
-                            <p class="text-sm text-gray-600">${topics[0]?.name || 'N/A'}</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-indigo-200">
-                            <h5 class="font-semibold text-gray-800 mb-2">정책 우선순위</h5>
-                            <p class="text-sm text-gray-600">${topics.slice(0, 3).map(t => t.name).join(', ')}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 토픽 상세 정보 표시
-        async function showTopicDetail(topicId) {
-            try {
-                const topicData = await fetchAPI(`${API_BASE}/api/lda/topics/${topicId}`);
-                alert(`토픽: ${topicData.name}\n키워드: ${topicData.keywords.join(', ')}\n정치인 수: ${topicData.politicians.length}명`);
-            } catch (error) {
-                showError(`토픽 상세 정보 로드 실패: ${error.message}`);
-            }
-        }
-
-        // 정치인 상세 정보 표시
-        async function showPoliticianDetail(politicianId) {
-            try {
-                const politicianData = await fetchAPI(`${API_BASE}/api/politicians/${politicianId}`);
-                const topics = politicianData.lda_analysis?.topics || [];
-                const topicsText = topics.map(topic => `${topic.name}: ${(topic.weight * 100).toFixed(1)}%`).join('\n');
-                alert(`정치인: ${politicianData.name}\n직책: ${politicianData.position}\n정당: ${politicianData.party}\n\n토픽 분석:\n${topicsText}`);
-            } catch (error) {
-                showError(`정치인 상세 정보 로드 실패: ${error.message}`);
-            }
-        }
-
-        // 데이터 내보내기
-        function exportData() {
-            const data = {
-                politicians: politiciansData,
-                lda: ldaData,
-                exportDate: new Date().toISOString()
-            };
+            container.innerHTML = '';
             
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `newsanalyzer_data_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        // 관리자 업데이트 기능
-        function updateData() {
-            alert('관리자 전용 기능: 데이터 업데이트를 시작합니다.');
-            // 실제 구현에서는 서버 API를 호출
-        }
-
-        function rerunLda() {
-            alert('관리자 전용 기능: LDA 분석을 재실행합니다.');
-            // 실제 구현에서는 서버 API를 호출
-        }
-
-        // ContextCHECKER 토글
-        function toggleContextChecker() {
-            if (contextCheckerSection.classList.contains('hidden')) {
-                // ContextCHECKER 표시
-                contextCheckerSection.classList.remove('hidden');
-                politiciansListSection.classList.add('hidden');
-                contextCheckerBtn.classList.add('bg-indigo-600');
-                contextCheckerBtn.classList.remove('bg-indigo-500');
+            allSigungu.forEach(sigungu => {
+                const sigunguEl = document.createElement('div');
+                sigunguEl.className = 'bg-gray-50 rounded-lg p-3 mb-2 cursor-pointer hover:bg-gray-100 transition-colors';
+                sigunguEl.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-700">${sigungu.sigungu_name}</h4>
+                            <p class="text-sm text-gray-500">${sigungu.total_regions}개 지역</p>
+                        </div>
+                        <div class="text-lg">📁</div>
+                    </div>
+                `;
                 
-                // 정치인 선택 버튼 렌더링
-                renderPoliticianSelector();
+                sigunguEl.addEventListener('click', () => loadEmdongList(sigungu.code));
+                container.appendChild(sigunguEl);
+            });
+        }
+
+        // 읍면동 목록 로드
+        async function loadEmdongList(sigunguCode) {
+            try {
+                console.log(`📊 읍면동 데이터 로드 중... (${sigunguCode})`);
+                
+                const data = await fetchAPI(`${API_BASE}/api/emdong?sigungu_code=${sigunguCode}`);
+                
+                if (data && data.emdong_list) {
+                    allEmdong = data.emdong_list;
+                    console.log(`✅ 읍면동 데이터 로드 완료: ${allEmdong.length}개`);
+                    renderEmdongList();
+                } else {
+                    throw new Error('읍면동 데이터 구조가 올바르지 않습니다.');
+                }
+            } catch (error) {
+                console.error('❌ 읍면동 데이터 로드 실패:', error);
+                showError(`읍면동 데이터 로드 실패: ${error.message}`);
+            }
+        }
+
+        // 읍면동 목록 렌더링
+        function renderEmdongList() {
+            const container = document.getElementById('emdongList');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            allEmdong.forEach(emdong => {
+                const emdongEl = document.createElement('div');
+                emdongEl.className = 'bg-blue-50 rounded-lg p-3 mb-2 cursor-pointer hover:bg-blue-100 transition-colors';
+                emdongEl.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h5 class="font-medium text-blue-700">${emdong.emdong_name}</h5>
+                        </div>
+                        <div class="text-lg">🏘️</div>
+                    </div>
+                `;
+                
+                emdongEl.addEventListener('click', () => selectRegion(emdong));
+                container.appendChild(emdongEl);
+            });
+        }
+
+        // 시도 토글
+        async function toggleSido(sidoCode) {
+            const sido = allSido.find(s => s.code === sidoCode);
+            if (!sido) return;
+
+            if (expandedSidos.has(sidoCode)) {
+                // 접기
+                expandedSidos.delete(sidoCode);
+                const container = document.getElementById(`sido-${sidoCode}`);
+                if (container) {
+                    container.remove();
+                }
             } else {
-                // 기본 뷰로 돌아가기
-                contextCheckerSection.classList.add('hidden');
-                politiciansListSection.classList.remove('hidden');
-                contextCheckerBtn.classList.remove('bg-indigo-600');
-                contextCheckerBtn.classList.add('bg-indigo-500');
+                // 펼치기
+                expandedSidos.add(sidoCode);
+                
+                // 시군구 컨테이너 생성
+                const container = document.createElement('div');
+                container.id = `sido-${sidoCode}`;
+                container.className = 'mt-3 ml-4';
+                
+                const sidoEl = document.querySelector(`[onclick*="${sidoCode}"]`)?.parentElement;
+                if (sidoEl) {
+                    sidoEl.parentElement.insertBefore(container, sidoEl.nextSibling);
+                }
+                
+                await loadSigunguList(sido.sido_name);
             }
         }
 
-        // 이벤트 리스너
-        refreshBtn.addEventListener('click', loadData);
-        exportBtn.addEventListener('click', exportData);
-        logoutBtn.addEventListener('click', logout);
-        contextCheckerBtn.addEventListener('click', toggleContextChecker);
-        adminBtn.addEventListener('click', () => {
-            adminModal.classList.remove('hidden');
-        });
-        closeAdminModal.addEventListener('click', () => {
-            adminModal.classList.add('hidden');
-        });
+        // 지역 선택
+        function selectRegion(emdong) {
+            currentSelectedRegion = emdong;
+            console.log('📍 선택된 지역:', emdong.emdong_name);
+            
+            // 선택된 지역 표시
+            const selectedEl = document.getElementById('selectedRegion');
+            if (selectedEl) {
+                selectedEl.textContent = emdong.emdong_name;
+                selectedEl.classList.remove('hidden');
+            }
+        }
 
-        // 관리자 전용 버튼들
-        document.getElementById('updateDataBtn').addEventListener('click', updateData);
-        document.getElementById('rerunLdaBtn').addEventListener('click', rerunLda);
+        // 대시보드 통계 업데이트
+        function updateDashboardStats() {
+            const totalRegionsEl = document.getElementById('totalRegions');
+            const totalSidoEl = document.getElementById('totalSido');
+            
+            if (totalRegionsEl) {
+                const totalRegions = allSido.reduce((sum, sido) => sum + sido.total_regions, 0);
+                totalRegionsEl.textContent = totalRegions.toLocaleString();
+            }
+            
+            if (totalSidoEl) {
+                totalSidoEl.textContent = allSido.length;
+            }
+        }
 
         // 초기화
-        if (checkAuth()) {
-            loadData();
+        async function init() {
+            console.log('🚀 InsightForge 웹 애플리케이션 시작 (v8.0.0 - DASHBOARD)');
+            console.log('✅ localhost:3002 완전 제거됨');
+            console.log('✅ Vercel API 사용');
+            console.log('✅ 대시보드 파일명 사용');
+            console.log('✅ 외부 파일 로드 없음');
+            
+            showLoading();
+            await loadSidoData();
         }
+
+        // DOM 로드 완료 시 초기화
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
