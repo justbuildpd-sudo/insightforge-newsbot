@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsAnalyzer API 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .accounts-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .account-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .account-card h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .account-info {
+            margin-bottom: 15px;
+        }
+        
+        .account-info div {
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .account-info .label {
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .account-info .value {
+            color: #333;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+        
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #ffc107, #fd7e14);
+        }
+        
+        .progress-fill.danger {
+            background: linear-gradient(90deg, #dc3545, #e83e8c);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-indicator.enabled {
+            background: #28a745;
+        }
+        
+        .status-indicator.disabled {
+            background: #dc3545;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 NewsAnalyzer API 관리</h1>
+            <p>3개 네이버 API 계정을 통한 하루 종일 뉴스 수집 시스템</p>
+        </div>
+        
+        <div class="content">
+            <!-- 전체 통계 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>총 API 사용량</h3>
+                    <div class="value" id="total-used">0</div>
+                    <div>/ <span id="total-limit">0</span></div>
+                </div>
+                <div class="stat-card">
+                    <h3>남은 사용량</h3>
+                    <div class="value" id="remaining">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>활성 계정</h3>
+                    <div class="value" id="active-accounts">0</div>
+                </div>
+            </div>
+            
+            <!-- API 계정 관리 -->
+            <div class="accounts-section">
+                <div class="section-title">
+                    📊 API 계정 현황
+                    <button class="btn btn-primary" onclick="openAddModal()">+ 새 계정 추가</button>
+                </div>
+                
+                <div class="accounts-grid" id="accounts-grid">
+                    <div class="loading">로딩 중...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 새 계정 추가 모달 -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h2>새 API 계정 추가</h2>
+            <form id="addAccountForm">
+                <div class="form-group">
+                    <label>계정 ID:</label>
+                    <input type="text" id="account-id" required>
+                </div>
+                <div class="form-group">
+                    <label>Client ID:</label>
+                    <input type="text" id="client-id" required>
+                </div>
+                <div class="form-group">
+                    <label>Client Secret:</label>
+                    <input type="text" id="client-secret" required>
+                </div>
+                <div class="form-group">
+                    <label>일일 한도:</label>
+                    <input type="number" id="daily-limit" value="25000" required>
+                </div>
+                <div class="form-group">
+                    <label>우선순위:</label>
+                    <select id="priority">
+                        <option value="1">1 (최우선)</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>설명:</label>
+                    <input type="text" id="description" placeholder="예: Primary API Account">
+                </div>
+                <button type="submit" class="btn btn-success">추가</button>
+                <button type="button" class="btn btn-danger" onclick="closeAddModal()">취소</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // 전역 변수
+        let accounts = [];
+        
+        // 페이지 로드시 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatus();
+            loadAccounts();
+            
+            // 30초마다 자동 새로고침
+            setInterval(() => {
+                loadStatus();
+                loadAccounts();
+            }, 30000);
+        });
+        
+        // 상태 로드
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('total-used').textContent = data.data.total_used.toLocaleString();
+                    document.getElementById('total-limit').textContent = data.data.total_limit.toLocaleString();
+                    document.getElementById('remaining').textContent = data.data.remaining.toLocaleString();
+                    document.getElementById('active-accounts').textContent = data.data.accounts.filter(acc => acc.enabled).length;
+                }
+            } catch (error) {
+                console.error('상태 로드 실패:', error);
+            }
+        }
+        
+        // 계정 목록 로드
+        async function loadAccounts() {
+            try {
+                const response = await fetch('/api/accounts');
+                const data = await response.json();
+                
+                if (data.success) {
+                    accounts = data.data;
+                    renderAccounts();
+                }
+            } catch (error) {
+                console.error('계정 로드 실패:', error);
+            }
+        }
+        
+        // 계정 목록 렌더링
+        function renderAccounts() {
+            const grid = document.getElementById('accounts-grid');
+            
+            if (accounts.length === 0) {
+                grid.innerHTML = '<div class="loading">등록된 계정이 없습니다.</div>';
+                return;
+            }
+            
+            grid.innerHTML = accounts.map(account => `
+                <div class="account-card">
+                    <h4>
+                        <span class="status-indicator ${account.enabled ? 'enabled' : 'disabled'}"></span>
+                        ${account.description}
+                    </h4>
+                    <div class="account-info">
+                        <div>
+                            <span class="label">계정 ID:</span>
+                            <span class="value">${account.id}</span>
+                        </div>
+                        <div>
+                            <span class="label">Client ID:</span>
+                            <span class="value">${account.client_id}</span>
+                        </div>
+                        <div>
+                            <span class="label">사용량:</span>
+                            <span class="value">${account.used.toLocaleString()} / ${account.limit.toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="label">남은 사용량:</span>
+                            <span class="value">${account.remaining.toLocaleString()}</span>
+                        </div>
+                        <div>
+                            <span class="label">우선순위:</span>
+                            <span class="value">${account.priority}</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${getProgressClass(account.used, account.limit)}" 
+                             style="width: ${(account.used / account.limit) * 100}%"></div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="testAccount('${account.id}')">테스트</button>
+                        <button class="btn btn-warning" onclick="toggleAccount('${account.id}')">
+                            ${account.enabled ? '비활성화' : '활성화'}
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteAccount('${account.id}')">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 진행률 클래스 결정
+        function getProgressClass(used, limit) {
+            const percentage = (used / limit) * 100;
+            if (percentage >= 90) return 'danger';
+            if (percentage >= 70) return 'warning';
+            return '';
+        }
+        
+        // 새 계정 추가 모달 열기
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+        }
+        
+        // 새 계정 추가 모달 닫기
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addAccountForm').reset();
+        }
+        
+        // 새 계정 추가
+        document.getElementById('addAccountForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                id: document.getElementById('account-id').value,
+                client_id: document.getElementById('client-id').value,
+                client_secret: document.getElementById('client-secret').value,
+                daily_limit: parseInt(document.getElementById('daily-limit').value),
+                priority: parseInt(document.getElementById('priority').value),
+                description: document.getElementById('description').value,
+                enabled: true
+            };
+            
+            try {
+                const response = await fetch('/api/accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('계정 추가 성공!');
+                    closeAddModal();
+                    loadAccounts();
+                } else {
+                    alert('계정 추가 실패: ' + data.error);
+                }
+            } catch (error) {
+                alert('계정 추가 실패: ' + error.message);
+            }
+        });
+        
+        // 계정 테스트
+        async function testAccount(accountId) {
+            try {
+                const response = await fetch(`/api/test/${accountId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('API 테스트 성공!');
+                } else {
+                    alert('API 테스트 실패: ' + data.error);
+                }
+            } catch (error) {
+                alert('API 테스트 실패: ' + error.message);
+            }
+        }
+        
+        // 계정 활성화/비활성화
+        async function toggleAccount(accountId) {
+            const account = accounts.find(acc => acc.id === accountId);
+            if (!account) return;
+            
+            try {
+                const response = await fetch(`/api/accounts/${accountId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        enabled: !account.enabled
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('계정 상태 변경 성공!');
+                    loadAccounts();
+                } else {
+                    alert('계정 상태 변경 실패: ' + data.error);
+                }
+            } catch (error) {
+                alert('계정 상태 변경 실패: ' + error.message);
+            }
+        }
+        
+        // 계정 삭제
+        async function deleteAccount(accountId) {
+            if (!confirm('정말로 이 계정을 삭제하시겠습니까?')) return;
+            
+            try {
+                const response = await fetch(`/api/accounts/${accountId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('계정 삭제 성공!');
+                    loadAccounts();
+                } else {
+                    alert('계정 삭제 실패: ' + data.error);
+                }
+            } catch (error) {
+                alert('계정 삭제 실패: ' + error.message);
+            }
+        }
+        
+        // 모달 외부 클릭시 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target === modal) {
+                closeAddModal();
+            }
+        }
+    </script>
+</body>
+</html>

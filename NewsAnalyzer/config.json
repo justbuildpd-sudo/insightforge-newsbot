@@ -1,0 +1,29 @@
+{
+  "naver_api": {
+    "client_id": "ULDLTGiPvrrPBgbuydSm",
+    "client_secret": "uO5mu7UQBg"
+  },
+  "collection": {
+    "max_articles_per_politician": 100,
+    "search_period_days": 30,
+    "update_interval_hours": 24
+  },
+  "lda": {
+    "num_topics": 5,
+    "passes": 10,
+    "iterations": 100,
+    "min_word_length": 2,
+    "top_keywords": 20
+  },
+  "output": {
+    "insightforge_data_path": "../insightforge-web/data",
+    "assembly_lda_file": "assembly_member_lda_analysis.json",
+    "local_lda_file": "local_politicians_lda_analysis.json"
+  },
+  "schedule": {
+    "collection_time": "06:00",
+    "analysis_time": "07:00",
+    "upload_time": "08:00"
+  }
+}
+

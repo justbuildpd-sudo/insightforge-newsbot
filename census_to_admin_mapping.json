@@ -1,0 +1,218 @@
+{
+  "11010": {
+    "admin_code": "11110",
+    "sido": "서울특별시",
+    "sigungu": "종로구",
+    "census_code": "11010"
+  },
+  "11020": {
+    "admin_code": "11140",
+    "sido": "서울특별시",
+    "sigungu": "중구",
+    "census_code": "11020"
+  },
+  "11030": {
+    "admin_code": "11170",
+    "sido": "서울특별시",
+    "sigungu": "용산구",
+    "census_code": "11030"
+  },
+  "11040": {
+    "admin_code": "11200",
+    "sido": "서울특별시",
+    "sigungu": "성동구",
+    "census_code": "11040"
+  },
+  "11050": {
+    "admin_code": "11215",
+    "sido": "서울특별시",
+    "sigungu": "광진구",
+    "census_code": "11050"
+  },
+  "11060": {
+    "admin_code": "11230",
+    "sido": "서울특별시",
+    "sigungu": "동대문구",
+    "census_code": "11060"
+  },
+  "11070": {
+    "admin_code": "11260",
+    "sido": "서울특별시",
+    "sigungu": "중랑구",
+    "census_code": "11070"
+  },
+  "11080": {
+    "admin_code": "11290",
+    "sido": "서울특별시",
+    "sigungu": "성북구",
+    "census_code": "11080"
+  },
+  "11090": {
+    "admin_code": "11305",
+    "sido": "서울특별시",
+    "sigungu": "강북구",
+    "census_code": "11090"
+  },
+  "11100": {
+    "admin_code": "11320",
+    "sido": "서울특별시",
+    "sigungu": "도봉구",
+    "census_code": "11100"
+  },
+  "11110": {
+    "admin_code": "11350",
+    "sido": "서울특별시",
+    "sigungu": "노원구",
+    "census_code": "11110"
+  },
+  "11120": {
+    "admin_code": "11380",
+    "sido": "서울특별시",
+    "sigungu": "은평구",
+    "census_code": "11120"
+  },
+  "11130": {
+    "admin_code": "11410",
+    "sido": "서울특별시",
+    "sigungu": "서대문구",
+    "census_code": "11130"
+  },
+  "11140": {
+    "admin_code": "11440",
+    "sido": "서울특별시",
+    "sigungu": "마포구",
+    "census_code": "11140"
+  },
+  "11150": {
+    "admin_code": "11470",
+    "sido": "서울특별시",
+    "sigungu": "양천구",
+    "census_code": "11150"
+  },
+  "11160": {
+    "admin_code": "11500",
+    "sido": "서울특별시",
+    "sigungu": "강서구",
+    "census_code": "11160"
+  },
+  "11170": {
+    "admin_code": "11530",
+    "sido": "서울특별시",
+    "sigungu": "구로구",
+    "census_code": "11170"
+  },
+  "11180": {
+    "admin_code": "11545",
+    "sido": "서울특별시",
+    "sigungu": "금천구",
+    "census_code": "11180"
+  },
+  "11190": {
+    "admin_code": "11560",
+    "sido": "서울특별시",
+    "sigungu": "영등포구",
+    "census_code": "11190"
+  },
+  "11200": {
+    "admin_code": "11590",
+    "sido": "서울특별시",
+    "sigungu": "동작구",
+    "census_code": "11200"
+  },
+  "11210": {
+    "admin_code": "11620",
+    "sido": "서울특별시",
+    "sigungu": "관악구",
+    "census_code": "11210"
+  },
+  "11220": {
+    "admin_code": "11650",
+    "sido": "서울특별시",
+    "sigungu": "서초구",
+    "census_code": "11220"
+  },
+  "11230": {
+    "admin_code": "11680",
+    "sido": "서울특별시",
+    "sigungu": "강남구",
+    "census_code": "11230"
+  },
+  "11240": {
+    "admin_code": "11710",
+    "sido": "서울특별시",
+    "sigungu": "송파구",
+    "census_code": "11240"
+  },
+  "11250": {
+    "admin_code": "11740",
+    "sido": "서울특별시",
+    "sigungu": "강동구",
+    "census_code": "11250"
+  },
+  "26010": {
+    "admin_code": "26110",
+    "sido": "부산광역시",
+    "sigungu": "중구",
+    "census_code": "26010"
+  },
+  "26020": {
+    "admin_code": "26140",
+    "sido": "부산광역시",
+    "sigungu": "서구",
+    "census_code": "26020"
+  },
+  "26030": {
+    "admin_code": "26170",
+    "sido": "부산광역시",
+    "sigungu": "동구",
+    "census_code": "26030"
+  },
+  "26040": {
+    "admin_code": "26200",
+    "sido": "부산광역시",
+    "sigungu": "영도구",
+    "census_code": "26040"
+  },
+  "26510": {
+    "admin_code": "26230",
+    "sido": "부산광역시",
+    "sigungu": "부산진구",
+    "census_code": "26510"
+  },
+  "29010": {
+    "admin_code": "29110",
+    "sido": "광주광역시",
+    "sigungu": "동구",
+    "census_code": "29010"
+  },
+  "31011": {
+    "admin_code": "31110",
+    "sido": "울산광역시",
+    "sigungu": "중구",
+    "census_code": "31011"
+  },
+  "31012": {
+    "admin_code": "31140",
+    "sido": "울산광역시",
+    "sigungu": "남구",
+    "census_code": "31012"
+  },
+  "31013": {
+    "admin_code": "31170",
+    "sido": "울산광역시",
+    "sigungu": "동구",
+    "census_code": "31013"
+  },
+  "31014": {
+    "admin_code": "31200",
+    "sido": "울산광역시",
+    "sigungu": "북구",
+    "census_code": "31014"
+  },
+  "31021": {
+    "admin_code": "31710",
+    "sido": "울산광역시",
+    "sigungu": "울주군",
+    "census_code": "31021"
+  }
+}

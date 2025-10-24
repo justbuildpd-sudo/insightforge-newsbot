@@ -1,0 +1,290 @@
+{
+  "종로구": {
+    "name": "곽상언",
+    "party": "더불어민주당",
+    "district": "종로구",
+    "position": "국회의원"
+  },
+  "중구성동구갑": {
+    "name": "전현희",
+    "party": "더불어민주당",
+    "district": "중구성동구갑",
+    "position": "국회의원"
+  },
+  "중구성동구을": {
+    "name": "박성준",
+    "party": "더불어민주당",
+    "district": "중구성동구을",
+    "position": "국회의원"
+  },
+  "용산구": {
+    "name": "권영세",
+    "party": "국민의힘",
+    "district": "용산구",
+    "position": "국회의원"
+  },
+  "광진구갑": {
+    "name": "이정헌",
+    "party": "더불어민주당",
+    "district": "광진구갑",
+    "position": "국회의원"
+  },
+  "광진구을": {
+    "name": "고민정",
+    "party": "더불어민주당",
+    "district": "광진구을",
+    "position": "국회의원"
+  },
+  "동대문구갑": {
+    "name": "안규백",
+    "party": "더불어민주당",
+    "district": "동대문구갑",
+    "position": "국회의원"
+  },
+  "동대문구을": {
+    "name": "장경태",
+    "party": "더불어민주당",
+    "district": "동대문구을",
+    "position": "국회의원"
+  },
+  "중랑구갑": {
+    "name": "서영교",
+    "party": "더불어민주당",
+    "district": "중랑구갑",
+    "position": "국회의원"
+  },
+  "중랑구을": {
+    "name": "박홍근",
+    "party": "더불어민주당",
+    "district": "중랑구을",
+    "position": "국회의원"
+  },
+  "성북구갑": {
+    "name": "김영배",
+    "party": "더불어민주당",
+    "district": "성북구갑",
+    "position": "국회의원"
+  },
+  "성북구을": {
+    "name": "김남근",
+    "party": "더불어민주당",
+    "district": "성북구을",
+    "position": "국회의원"
+  },
+  "강북구갑": {
+    "name": "천준호",
+    "party": "더불어민주당",
+    "district": "강북구갑",
+    "position": "국회의원"
+  },
+  "강북구을": {
+    "name": "한민수",
+    "party": "더불어민주당",
+    "district": "강북구을",
+    "position": "국회의원"
+  },
+  "도봉구갑": {
+    "name": "김재섭",
+    "party": "국민의힘",
+    "district": "도봉구갑",
+    "position": "국회의원"
+  },
+  "도봉구을": {
+    "name": "오기형",
+    "party": "더불어민주당",
+    "district": "도봉구을",
+    "position": "국회의원"
+  },
+  "노원구갑": {
+    "name": "우원식",
+    "party": "더불어민주당",
+    "district": "노원구갑",
+    "position": "국회의원"
+  },
+  "노원구을": {
+    "name": "김성환",
+    "party": "더불어민주당",
+    "district": "노원구을",
+    "position": "국회의원"
+  },
+  "은평구갑": {
+    "name": "박주민",
+    "party": "더불어민주당",
+    "district": "은평구갑",
+    "position": "국회의원"
+  },
+  "은평구을": {
+    "name": "김우영",
+    "party": "더불어민주당",
+    "district": "은평구을",
+    "position": "국회의원"
+  },
+  "서대문구갑": {
+    "name": "김동아",
+    "party": "더불어민주당",
+    "district": "서대문구갑",
+    "position": "국회의원"
+  },
+  "서대문구을": {
+    "name": "김영호",
+    "party": "더불어민주당",
+    "district": "서대문구을",
+    "position": "국회의원"
+  },
+  "마포구갑": {
+    "name": "조정훈",
+    "party": "국민의힘",
+    "district": "마포구갑",
+    "position": "국회의원"
+  },
+  "마포구을": {
+    "name": "정청래",
+    "party": "더불어민주당",
+    "district": "마포구을",
+    "position": "국회의원"
+  },
+  "양천구갑": {
+    "name": "황희",
+    "party": "더불어민주당",
+    "district": "양천구갑",
+    "position": "국회의원"
+  },
+  "양천구을": {
+    "name": "이용선",
+    "party": "더불어민주당",
+    "district": "양천구을",
+    "position": "국회의원"
+  },
+  "강서구갑": {
+    "name": "강선우",
+    "party": "더불어민주당",
+    "district": "강서구갑",
+    "position": "국회의원"
+  },
+  "강서구을": {
+    "name": "진성준",
+    "party": "더불어민주당",
+    "district": "강서구을",
+    "position": "국회의원"
+  },
+  "강서구병": {
+    "name": "한정애",
+    "party": "더불어민주당",
+    "district": "강서구병",
+    "position": "국회의원"
+  },
+  "구로구갑": {
+    "name": "이인영",
+    "party": "더불어민주당",
+    "district": "구로구갑",
+    "position": "국회의원"
+  },
+  "구로구을": {
+    "name": "윤건영",
+    "party": "더불어민주당",
+    "district": "구로구을",
+    "position": "국회의원"
+  },
+  "금천구": {
+    "name": "최기상",
+    "party": "더불어민주당",
+    "district": "금천구",
+    "position": "국회의원"
+  },
+  "영등포구갑": {
+    "name": "채현일",
+    "party": "더불어민주당",
+    "district": "영등포구갑",
+    "position": "국회의원"
+  },
+  "영등포구을": {
+    "name": "김민석",
+    "party": "더불어민주당",
+    "district": "영등포구을",
+    "position": "국회의원"
+  },
+  "동작구갑": {
+    "name": "김병기",
+    "party": "더불어민주당",
+    "district": "동작구갑",
+    "position": "국회의원"
+  },
+  "동작구을": {
+    "name": "나경원",
+    "party": "국민의힘",
+    "district": "동작구을",
+    "position": "국회의원"
+  },
+  "관악구갑": {
+    "name": "박민규",
+    "party": "더불어민주당",
+    "district": "관악구갑",
+    "position": "국회의원"
+  },
+  "관악구을": {
+    "name": "정태호",
+    "party": "더불어민주당",
+    "district": "관악구을",
+    "position": "국회의원"
+  },
+  "서초구갑": {
+    "name": "조은희",
+    "party": "국민의힘",
+    "district": "서초구갑",
+    "position": "국회의원"
+  },
+  "서초구을": {
+    "name": "신동욱",
+    "party": "국민의힘",
+    "district": "서초구을",
+    "position": "국회의원"
+  },
+  "강남구갑": {
+    "name": "서명옥",
+    "party": "국민의힘",
+    "district": "강남구갑",
+    "position": "국회의원"
+  },
+  "강남구을": {
+    "name": "박수민",
+    "party": "국민의힘",
+    "district": "강남구을",
+    "position": "국회의원"
+  },
+  "강남구병": {
+    "name": "고동진",
+    "party": "국민의힘",
+    "district": "강남구병",
+    "position": "국회의원"
+  },
+  "송파구갑": {
+    "name": "박정훈",
+    "party": "국민의힘",
+    "district": "송파구갑",
+    "position": "국회의원"
+  },
+  "송파구을": {
+    "name": "배현진",
+    "party": "국민의힘",
+    "district": "송파구을",
+    "position": "국회의원"
+  },
+  "송파구병": {
+    "name": "남인순",
+    "party": "더불어민주당",
+    "district": "송파구병",
+    "position": "국회의원"
+  },
+  "강동구갑": {
+    "name": "진선미",
+    "party": "더불어민주당",
+    "district": "강동구갑",
+    "position": "국회의원"
+  },
+  "강동구을": {
+    "name": "이해식",
+    "party": "더불어민주당",
+    "district": "강동구을",
+    "position": "국회의원"
+  }
+}
