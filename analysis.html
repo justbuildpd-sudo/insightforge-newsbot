@@ -202,9 +202,13 @@
                 
                 console.log(`✅ 시도 데이터 로드 완료: ${allSido.length}개`);
                 console.log('📋 시도 목록:', allSido.map(s => s.sido_name));
+                
+                // 렌더링 및 UI 업데이트
                 renderSidoList();
                 updateDashboardStats();
                 showContent();
+                
+                console.log('✅ UI 업데이트 완료');
             } catch (error) {
                 console.error('❌ 시도 데이터 로드 실패:', error);
                 showError(`시도 데이터 로드 실패: ${error.message}`);
@@ -415,12 +419,22 @@
             console.log('✅ 앱과 동일한 UI 디자인');
             console.log('✅ 하드코딩된 데이터 사용');
             
-            showLoading();
-            await loadSidoData();
+            try {
+                showLoading();
+                console.log('📊 데이터 로드 시작...');
+                await loadSidoData();
+                console.log('✅ 데이터 로드 완료');
+            } catch (error) {
+                console.error('❌ 초기화 실패:', error);
+                showError('초기화 중 오류가 발생했습니다: ' + error.message);
+            }
         }
 
         // DOM 로드 완료 시 초기화
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM 로드 완료');
+            setTimeout(init, 100); // 100ms 지연으로 안정성 확보
+        });
     </script>
 </body>
 </html>
