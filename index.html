@@ -3,592 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InsightForge - 지역 데이터 분석 (v6.0.0 - INLINE SCRIPT)</title>
-    <meta name="version" content="6.0.0">
-    <meta name="cache-bust" content="20241023-6">
+    <title>InsightForge - 정치 데이터 분석 플랫폼</title>
+    <meta name="version" content="1.0.0">
+    <meta name="cache-bust" content="20241023-1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Tailwind CSS 설정
         tailwind.config = {
             theme: {
                 extend: {
-                    animation: {
-                        'float': 'float 3s ease-in-out infinite',
-                        'pulse': 'pulse 2s infinite',
-                        'spin': 'spin 1s linear infinite'
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#1E40AF',
+                        accent: '#F59E0B'
                     }
                 }
             }
         }
     </script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .region-selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-            border-color: #667eea !important;
-        }
-        .sido-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .sigungu-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .emdong-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .loading {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .chart-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 24px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 16px;
-            padding: 24px;
-            color: white;
-            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(240, 147, 251, 0.4);
-        }
-        .stat-card.green {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
-        }
-        .stat-card.purple {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #333;
-            box-shadow: 0 8px 25px rgba(168, 237, 234, 0.3);
-        }
-        .hero-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .floating-animation {
-            animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        .pulse-animation {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-    </style>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <!-- 헤더 -->
-    <header class="hero-gradient shadow-2xl">
+    <header class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
+            <div class="flex justify-between items-center py-6">
                 <div class="flex items-center">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
-                            <i class="fas fa-chart-line text-2xl text-blue-600"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-3xl font-bold text-white">InsightForge</h1>
-                            <p class="text-blue-100 text-sm">지역 데이터 종합 분석 플랫폼</p>
-                        </div>
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-gray-900">InsightForge</h1>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button id="refreshBtn" class="glass-effect text-white px-6 py-3 rounded-xl transition-all duration-300 hover:bg-white hover:bg-opacity-20">
-                        <i class="fas fa-sync-alt mr-2"></i>새로고침
-                    </button>
-                    <button id="exportBtn" class="bg-white bg-opacity-20 text-white px-6 py-3 rounded-xl transition-all duration-300 hover:bg-opacity-30">
-                        <i class="fas fa-download mr-2"></i>데이터 내보내기
+                    <button onclick="goToDashboard()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        대시보드
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- 로딩 상태 -->
-        <div id="loading" class="text-center py-20 hidden">
-            <div class="inline-block">
-                <div class="loading w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-                <p class="mt-6 text-xl text-gray-600 font-medium">데이터를 불러오는 중...</p>
-                <p class="mt-2 text-gray-500">잠시만 기다려주세요</p>
+    <!-- 메인 콘텐츠 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- 히어로 섹션 -->
+        <div class="text-center mb-16">
+            <h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+                정치에 대한 데이터의 편견
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                데이터 기반 정치 분석으로 더 나은 민주주의를 만들어갑니다
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="goToDashboard()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium text-lg transition-colors">
+                    데이터 분석 시작
+                </button>
+                <button onclick="scrollToFeatures()" class="bg-white hover:bg-gray-50 text-blue-600 px-8 py-3 rounded-lg font-medium text-lg border-2 border-blue-600 transition-colors">
+                    더 알아보기
+                </button>
             </div>
         </div>
 
-        <!-- 에러 상태 -->
-        <div id="error" class="bg-red-50 border-l-4 border-red-400 p-6 rounded-lg hidden">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle text-red-400 text-xl mr-3"></i>
-                <div>
-                    <h3 class="text-lg font-medium text-red-800">오류가 발생했습니다</h3>
-                    <p id="errorMessage" class="text-red-600 mt-1"></p>
-                </div>
+        <!-- 서비스 카드 -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">📊</div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">선거에서 이기는 법</h3>
+                <p class="text-gray-600">데이터 기반 선거 전략 분석으로 승리를 위한 인사이트를 제공합니다</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">🏛️</div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">정치인 분석</h3>
+                <p class="text-gray-600">정치인의 발언과 행동을 데이터로 분석하여 투명성을 높입니다</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+                <div class="text-4xl mb-4">📈</div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">트렌드 분석</h3>
+                <p class="text-gray-600">정치 트렌드와 여론 변화를 실시간으로 분석합니다</p>
             </div>
         </div>
 
-        <!-- 메인 콘텐츠 -->
-        <div id="content" class="hidden">
-            <!-- 대시보드 개요 -->
-            <div class="mb-8">
-                <div class="bg-white rounded-2xl shadow-xl p-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">
-                            <i class="fas fa-tachometer-alt text-blue-600 mr-3"></i>대시보드 개요
-                        </h2>
-                        <div class="flex items-center space-x-4">
-                            <span class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdate">-</span></span>
-                            <button class="text-blue-600 hover:text-blue-800 transition-colors">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div class="stat-card">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">총 시도</p>
-                                    <p id="totalSido" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-map-marked-alt text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card green">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">총 시군구</p>
-                                    <p id="totalSigungu" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-city text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card purple">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">총 동</p>
-                                    <p id="totalEmdong" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-home text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">활성 지역</p>
-                                    <p id="activeRegions" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-chart-pie text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                <!-- 지역 선택 패널 -->
-                <div class="xl:col-span-1">
-                    <div class="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
-                        <div class="flex items-center mb-6">
-                            <i class="fas fa-map-location-dot text-blue-600 text-xl mr-3"></i>
-                            <h2 class="text-xl font-bold text-gray-800">지역 선택</h2>
-                        </div>
-                        <div id="sido-list" class="space-y-3 max-h-96 overflow-y-auto">
-                            <!-- 시도 목록이 여기에 동적으로 추가됩니다 -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 차트 및 분석 패널 -->
-                <div class="xl:col-span-2 space-y-8">
-                    <!-- 인구 변화 차트 -->
-                    <div class="bg-white rounded-2xl shadow-xl p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-bold text-gray-800">
-                                <i class="fas fa-chart-line text-blue-600 mr-3"></i>인구 변화 차트
-                            </h2>
-                            <div class="flex items-center space-x-2">
-                                <button class="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-sm">인구</button>
-                                <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm">경제</button>
-                                <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm">교육</button>
-                            </div>
-                        </div>
-                        <div id="chart-container" class="chart-container min-h-96 flex items-center justify-center">
-                            <div class="text-center">
-                                <div class="text-8xl mb-6 floating-animation">📊</div>
-                                <p class="text-xl font-medium mb-2">지역을 선택하면 차트가 표시됩니다</p>
-                                <p class="text-lg opacity-80">다양한 데이터를 시각화하여 보여드립니다</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 데이터 분석 카드들 -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-2xl shadow-xl p-6">
-                            <div class="flex items-center mb-4">
-                                <i class="fas fa-users text-green-600 text-xl mr-3"></i>
-                                <h3 class="text-lg font-bold text-gray-800">인구 통계</h3>
-                            </div>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">총 인구</span>
-                                    <span class="font-semibold" id="totalPopulation">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">인구 밀도</span>
-                                    <span class="font-semibold" id="populationDensity">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">성장률</span>
-                                    <span class="font-semibold text-green-600" id="growthRate">-</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-2xl shadow-xl p-6">
-                            <div class="flex items-center mb-4">
-                                <i class="fas fa-chart-bar text-purple-600 text-xl mr-3"></i>
-                                <h3 class="text-lg font-bold text-gray-800">경제 지표</h3>
-                            </div>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">GDP</span>
-                                    <span class="font-semibold" id="gdp">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">1인당 GDP</span>
-                                    <span class="font-semibold" id="gdpPerCapita">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">성장률</span>
-                                    <span class="font-semibold text-blue-600" id="gdpGrowth">-</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- ContextCHECKER 섹션 -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-12 text-white text-center mb-16">
+            <h2 class="text-3xl font-bold mb-6">ContextCHECKER</h2>
+            <p class="text-xl mb-8 opacity-90">
+                정치인 발언의 맥락과 의도를 데이터로 분석하여 
+                편견 없는 객관적 정보를 제공합니다
+            </p>
+            <button onclick="goToDashboard()" class="bg-white text-blue-600 px-8 py-3 rounded-lg font-medium text-lg hover:bg-gray-100 transition-colors">
+                ContextCHECKER 시작
+            </button>
         </div>
-    </div>
+
+        <!-- 회사 정보 -->
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">컨텍스트 (Context)</h2>
+            <p class="text-gray-600 mb-4">
+                정치에 대한 데이터의 편견을 해결하는 데이터 분석 플랫폼
+            </p>
+            <p class="text-gray-500">
+                문의: justbuild.pd@gmail.com
+            </p>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="bg-gray-900 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2024 Context. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script>
-        // InsightForge 웹 애플리케이션 - 인라인 스크립트 (v6.0.0 - NO EXTERNAL FILES)
-        // Version: 6.0.0 - INLINE SCRIPT - NO CACHE ISSUES
-        const API_BASE = 'https://insightforge-newsbot.vercel.app';
-
-        // 전역 변수
-        let allSido = [];
-        let allSigungu = [];
-        let allEmdong = [];
-        let expandedSidos = new Set();
-        let currentSelectedRegion = null;
-        let chartData = null;
-
-        // DOM 요소
-        const loadingEl = document.getElementById('loading');
-        const errorEl = document.getElementById('error');
-        const contentEl = document.getElementById('content');
-
-        // 로딩 상태 표시
-        function showLoading() {
-            if (loadingEl) loadingEl.classList.remove('hidden');
-            if (contentEl) contentEl.classList.add('hidden');
-            if (errorEl) errorEl.classList.add('hidden');
+        // 대시보드로 이동
+        function goToDashboard() {
+            window.location.href = '/dashboard.html';
         }
 
-        // 에러 상태 표시
-        function showError(message) {
-            if (errorEl) {
-                errorEl.classList.remove('hidden');
-                errorEl.querySelector('#errorMessage').textContent = message;
-            }
-            if (loadingEl) loadingEl.classList.add('hidden');
-            if (contentEl) contentEl.classList.add('hidden');
-        }
-
-        // 성공 상태 표시
-        function showContent() {
-            if (contentEl) contentEl.classList.remove('hidden');
-            if (loadingEl) loadingEl.classList.add('hidden');
-            if (errorEl) errorEl.classList.add('hidden');
-        }
-
-        // API 호출 헬퍼 - 극강 캐시 버스팅
-        async function fetchAPI(url) {
-            try {
-                // 극강 캐시 버스팅
-                const timestamp = Date.now();
-                const random = Math.random().toString(36).substring(7);
-                const cacheBuster = `?v=6.0.0&t=${timestamp}&r=${random}&cache=busted&force=reload&no-cache=true&inline=script`;
-                const finalUrl = url + cacheBuster;
-                
-                console.log('🚀 API 호출 (INLINE SCRIPT v6.0.0):', finalUrl);
-                console.log('✅ localhost:3002 완전 제거됨');
-                console.log('✅ Vercel API 사용');
-                console.log('✅ 인라인 스크립트 사용');
-                
-                const response = await fetch(finalUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0',
-                        'If-Modified-Since': '0'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('API 호출 오류:', error);
-                throw error;
-            }
-        }
-
-        // 시도 데이터 로드
-        async function loadSidoData() {
-            try {
-                console.log('📊 시도 데이터 로드 중... (v6.0.0 - INLINE SCRIPT)');
-                console.log('🔗 API URL:', `${API_BASE}/api/sido`);
-                console.log('🚨 인라인 스크립트로 캐시 완전 우회');
-                console.log('✅ localhost:3002 완전 제거됨');
-                console.log('✅ Vercel 서버리스 함수 정상 작동');
-                
-                const data = await fetchAPI(`${API_BASE}/api/sido`);
-                
-                if (data && data.sido_list) {
-                    allSido = data.sido_list;
-                    console.log(`✅ 시도 데이터 로드 완료: ${allSido.length}개`);
-                    renderSidoList();
-                    updateDashboardStats();
-                    showContent();
-                } else {
-                    throw new Error('시도 데이터 구조가 올바르지 않습니다.');
-                }
-            } catch (error) {
-                console.error('❌ 시도 데이터 로드 실패:', error);
-                showError(`시도 데이터 로드 실패: ${error.message}`);
-            }
-        }
-
-        // 시도 목록 렌더링
-        function renderSidoList() {
-            const container = document.getElementById('sidoList');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            allSido.forEach(sido => {
-                const sidoEl = document.createElement('div');
-                sidoEl.className = 'bg-white rounded-lg shadow-md p-4 mb-3 cursor-pointer hover:shadow-lg transition-shadow';
-                sidoEl.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800">${sido.sido_name}</h3>
-                            <p class="text-sm text-gray-600">${sido.total_regions}개 지역</p>
-                        </div>
-                        <div class="text-2xl">${expandedSidos.has(sido.code) ? '📂' : '📁'}</div>
-                    </div>
-                `;
-                
-                sidoEl.addEventListener('click', () => toggleSido(sido.code));
-                container.appendChild(sidoEl);
+        // 기능 섹션으로 스크롤
+        function scrollToFeatures() {
+            document.querySelector('.grid').scrollIntoView({ 
+                behavior: 'smooth' 
             });
         }
 
-        // 시군구 목록 로드
-        async function loadSigunguList(sidoName) {
-            try {
-                console.log(`📊 시군구 데이터 로드 중... (${sidoName})`);
-                
-                // 시도 코드 찾기
-                const sido = allSido.find(s => s.sido_name === sidoName);
-                if (!sido) {
-                    throw new Error('시도 정보를 찾을 수 없습니다.');
-                }
-                
-                const data = await fetchAPI(`${API_BASE}/api/sigungu?sido_code=${sido.code}`);
-                
-                if (data && data.sigungu_list) {
-                    allSigungu = data.sigungu_list;
-                    console.log(`✅ 시군구 데이터 로드 완료: ${allSigungu.length}개`);
-                    renderSigunguList(sidoName);
-                } else {
-                    throw new Error('시군구 데이터 구조가 올바르지 않습니다.');
-                }
-            } catch (error) {
-                console.error('❌ 시군구 데이터 로드 실패:', error);
-                showError(`시군구 데이터 로드 실패: ${error.message}`);
-            }
-        }
-
-        // 시군구 목록 렌더링
-        function renderSigunguList(sidoName) {
-            const container = document.getElementById(`sido-${allSido.find(s => s.sido_name === sidoName)?.code}`);
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            allSigungu.forEach(sigungu => {
-                const sigunguEl = document.createElement('div');
-                sigunguEl.className = 'bg-gray-50 rounded-lg p-3 mb-2 cursor-pointer hover:bg-gray-100 transition-colors';
-                sigunguEl.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-medium text-gray-700">${sigungu.sigungu_name}</h4>
-                            <p class="text-sm text-gray-500">${sigungu.total_regions}개 지역</p>
-                        </div>
-                        <div class="text-lg">📁</div>
-                    </div>
-                `;
-                
-                sigunguEl.addEventListener('click', () => loadEmdongList(sigungu.code));
-                container.appendChild(sigunguEl);
-            });
-        }
-
-        // 읍면동 목록 로드
-        async function loadEmdongList(sigunguCode) {
-            try {
-                console.log(`📊 읍면동 데이터 로드 중... (${sigunguCode})`);
-                
-                const data = await fetchAPI(`${API_BASE}/api/emdong?sigungu_code=${sigunguCode}`);
-                
-                if (data && data.emdong_list) {
-                    allEmdong = data.emdong_list;
-                    console.log(`✅ 읍면동 데이터 로드 완료: ${allEmdong.length}개`);
-                    renderEmdongList();
-                } else {
-                    throw new Error('읍면동 데이터 구조가 올바르지 않습니다.');
-                }
-            } catch (error) {
-                console.error('❌ 읍면동 데이터 로드 실패:', error);
-                showError(`읍면동 데이터 로드 실패: ${error.message}`);
-            }
-        }
-
-        // 읍면동 목록 렌더링
-        function renderEmdongList() {
-            const container = document.getElementById('emdongList');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            allEmdong.forEach(emdong => {
-                const emdongEl = document.createElement('div');
-                emdongEl.className = 'bg-blue-50 rounded-lg p-3 mb-2 cursor-pointer hover:bg-blue-100 transition-colors';
-                emdongEl.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h5 class="font-medium text-blue-700">${emdong.emdong_name}</h5>
-                        </div>
-                        <div class="text-lg">🏘️</div>
-                    </div>
-                `;
-                
-                emdongEl.addEventListener('click', () => selectRegion(emdong));
-                container.appendChild(emdongEl);
-            });
-        }
-
-        // 시도 토글
-        async function toggleSido(sidoCode) {
-            const sido = allSido.find(s => s.code === sidoCode);
-            if (!sido) return;
-
-            if (expandedSidos.has(sidoCode)) {
-                // 접기
-                expandedSidos.delete(sidoCode);
-                const container = document.getElementById(`sido-${sidoCode}`);
-                if (container) {
-                    container.remove();
-                }
-            } else {
-                // 펼치기
-                expandedSidos.add(sidoCode);
-                
-                // 시군구 컨테이너 생성
-                const container = document.createElement('div');
-                container.id = `sido-${sidoCode}`;
-                container.className = 'mt-3 ml-4';
-                
-                const sidoEl = document.querySelector(`[onclick*="${sidoCode}"]`)?.parentElement;
-                if (sidoEl) {
-                    sidoEl.parentElement.insertBefore(container, sidoEl.nextSibling);
-                }
-                
-                await loadSigunguList(sido.sido_name);
-            }
-        }
-
-        // 지역 선택
-        function selectRegion(emdong) {
-            currentSelectedRegion = emdong;
-            console.log('📍 선택된 지역:', emdong.emdong_name);
-            
-            // 선택된 지역 표시
-            const selectedEl = document.getElementById('selectedRegion');
-            if (selectedEl) {
-                selectedEl.textContent = emdong.emdong_name;
-                selectedEl.classList.remove('hidden');
-            }
-        }
-
-        // 대시보드 통계 업데이트
-        function updateDashboardStats() {
-            const totalRegionsEl = document.getElementById('totalRegions');
-            const totalSidoEl = document.getElementById('totalSido');
-            
-            if (totalRegionsEl) {
-                const totalRegions = allSido.reduce((sum, sido) => sum + sido.total_regions, 0);
-                totalRegionsEl.textContent = totalRegions.toLocaleString();
-            }
-            
-            if (totalSidoEl) {
-                totalSidoEl.textContent = allSido.length;
-            }
-        }
-
-        // 초기화
-        async function init() {
-            console.log('🚀 InsightForge 웹 애플리케이션 시작 (v6.0.0 - INLINE SCRIPT)');
-            console.log('✅ localhost:3002 완전 제거됨');
-            console.log('✅ Vercel API 사용');
-            console.log('✅ 인라인 스크립트 사용');
-            console.log('✅ 외부 파일 로드 없음');
-            
-            showLoading();
-            await loadSidoData();
-        }
-
-        // DOM 로드 완료 시 초기화
-        document.addEventListener('DOMContentLoaded', init);
+        // 페이지 로드 시 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 InsightForge 메인페이지 로드 완료');
+            console.log('✅ 메인페이지: index.html');
+            console.log('✅ 대시보드: dashboard.html');
+            console.log('✅ 완전히 분리된 구조');
+        });
     </script>
 </body>
 </html>
