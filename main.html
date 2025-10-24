@@ -3,301 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InsightForge - 지역 데이터 분석 (v7.0.0 - NEW FILE)</title>
-    <meta name="version" content="7.0.0">
-    <meta name="cache-bust" content="20241023-7">
+    <title>InsightForge - 지역 데이터 분석 (v12.0.0 - MAIN)</title>
+    <meta name="version" content="12.0.0">
+    <meta name="cache-bust" content="20241023-12">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Tailwind CSS 설정
         tailwind.config = {
             theme: {
                 extend: {
-                    animation: {
-                        'float': 'float 3s ease-in-out infinite',
-                        'pulse': 'pulse 2s infinite',
-                        'spin': 'spin 1s linear infinite'
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#1E40AF',
+                        accent: '#F59E0B'
                     }
                 }
             }
         }
     </script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .region-selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-            border-color: #667eea !important;
-        }
-        .sido-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .sigungu-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .emdong-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .loading {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .chart-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 24px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 16px;
-            padding: 24px;
-            color: white;
-            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(240, 147, 251, 0.4);
-        }
-        .stat-card.green {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
-        }
-        .stat-card.purple {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #333;
-            box-shadow: 0 8px 25px rgba(168, 237, 234, 0.3);
-        }
-        .hero-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .floating-animation {
-            animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        .pulse-animation {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-    </style>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <!-- 헤더 -->
-    <header class="hero-gradient shadow-2xl">
+    <header class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
+            <div class="flex justify-between items-center py-6">
                 <div class="flex items-center">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
-                            <i class="fas fa-chart-line text-2xl text-blue-600"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-3xl font-bold text-white">InsightForge</h1>
-                            <p class="text-blue-100 text-sm">지역 데이터 종합 분석 플랫폼</p>
-                        </div>
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-gray-900">InsightForge</h1>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button id="refreshBtn" class="glass-effect text-white px-6 py-3 rounded-xl transition-all duration-300 hover:bg-white hover:bg-opacity-20">
-                        <i class="fas fa-sync-alt mr-2"></i>새로고침
-                    </button>
-                    <button id="exportBtn" class="bg-white bg-opacity-20 text-white px-6 py-3 rounded-xl transition-all duration-300 hover:bg-opacity-30">
-                        <i class="fas fa-download mr-2"></i>데이터 내보내기
+                    <button onclick="goToLanding()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        홈으로
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- 로딩 상태 -->
-        <div id="loading" class="text-center py-20 hidden">
-            <div class="inline-block">
-                <div class="loading w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-                <p class="mt-6 text-xl text-gray-600 font-medium">데이터를 불러오는 중...</p>
-                <p class="mt-2 text-gray-500">잠시만 기다려주세요</p>
+    <!-- 메인 콘텐츠 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 대시보드 개요 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">총 지역</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalRegions">-</p>
+                    </div>
+                </div>
             </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">시도</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalSido">-</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">선택된 지역</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="selectedRegion">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로딩 상태 -->
+        <div id="loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="mt-2 text-gray-600">데이터를 불러오는 중...</p>
         </div>
 
         <!-- 에러 상태 -->
-        <div id="error" class="bg-red-50 border-l-4 border-red-400 p-6 rounded-lg hidden">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle text-red-400 text-xl mr-3"></i>
-                <div>
-                    <h3 class="text-lg font-medium text-red-800">오류가 발생했습니다</h3>
-                    <p id="errorMessage" class="text-red-600 mt-1"></p>
+        <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">데이터 로드 실패</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p id="errorMessage">데이터를 불러오는 중 오류가 발생했습니다.</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 메인 콘텐츠 -->
+        <!-- 콘텐츠 영역 -->
         <div id="content" class="hidden">
-            <!-- 대시보드 개요 -->
-            <div class="mb-8">
-                <div class="bg-white rounded-2xl shadow-xl p-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">
-                            <i class="fas fa-tachometer-alt text-blue-600 mr-3"></i>대시보드 개요
-                        </h2>
-                        <div class="flex items-center space-x-4">
-                            <span class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdate">-</span></span>
-                            <button class="text-blue-600 hover:text-blue-800 transition-colors">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div class="stat-card">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">총 시도</p>
-                                    <p id="totalSido" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-map-marked-alt text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card green">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">총 시군구</p>
-                                    <p id="totalSigungu" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-city text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card purple">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">총 동</p>
-                                    <p id="totalEmdong" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-home text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm opacity-90">활성 지역</p>
-                                    <p id="activeRegions" class="text-3xl font-bold">-</p>
-                                </div>
-                                <i class="fas fa-chart-pie text-2xl opacity-80"></i>
-                            </div>
-                        </div>
-                    </div>
+            <!-- 시도 목록 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">시도 선택</h2>
+                <div id="sidoList" class="space-y-3">
+                    <!-- 시도 목록이 여기에 동적으로 생성됩니다 -->
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                <!-- 지역 선택 패널 -->
-                <div class="xl:col-span-1">
-                    <div class="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
-                        <div class="flex items-center mb-6">
-                            <i class="fas fa-map-location-dot text-blue-600 text-xl mr-3"></i>
-                            <h2 class="text-xl font-bold text-gray-800">지역 선택</h2>
-                        </div>
-                        <div id="sido-list" class="space-y-3 max-h-96 overflow-y-auto">
-                            <!-- 시도 목록이 여기에 동적으로 추가됩니다 -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 차트 및 분석 패널 -->
-                <div class="xl:col-span-2 space-y-8">
-                    <!-- 인구 변화 차트 -->
-                    <div class="bg-white rounded-2xl shadow-xl p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-bold text-gray-800">
-                                <i class="fas fa-chart-line text-blue-600 mr-3"></i>인구 변화 차트
-                            </h2>
-                            <div class="flex items-center space-x-2">
-                                <button class="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-sm">인구</button>
-                                <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm">경제</button>
-                                <button class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm">교육</button>
-                            </div>
-                        </div>
-                        <div id="chart-container" class="chart-container min-h-96 flex items-center justify-center">
-                            <div class="text-center">
-                                <div class="text-8xl mb-6 floating-animation">📊</div>
-                                <p class="text-xl font-medium mb-2">지역을 선택하면 차트가 표시됩니다</p>
-                                <p class="text-lg opacity-80">다양한 데이터를 시각화하여 보여드립니다</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 데이터 분석 카드들 -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-2xl shadow-xl p-6">
-                            <div class="flex items-center mb-4">
-                                <i class="fas fa-users text-green-600 text-xl mr-3"></i>
-                                <h3 class="text-lg font-bold text-gray-800">인구 통계</h3>
-                            </div>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">총 인구</span>
-                                    <span class="font-semibold" id="totalPopulation">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">인구 밀도</span>
-                                    <span class="font-semibold" id="populationDensity">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">성장률</span>
-                                    <span class="font-semibold text-green-600" id="growthRate">-</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-2xl shadow-xl p-6">
-                            <div class="flex items-center mb-4">
-                                <i class="fas fa-chart-bar text-purple-600 text-xl mr-3"></i>
-                                <h3 class="text-lg font-bold text-gray-800">경제 지표</h3>
-                            </div>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">GDP</span>
-                                    <span class="font-semibold" id="gdp">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">1인당 GDP</span>
-                                    <span class="font-semibold" id="gdpPerCapita">-</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">성장률</span>
-                                    <span class="font-semibold text-blue-600" id="gdpGrowth">-</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- 읍면동 목록 -->
+            <div id="emdongList" class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">읍면동 선택</h2>
+                <div class="text-gray-500 text-center py-8">
+                    시도를 선택하면 해당 시도의 시군구 목록이 표시됩니다.
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
-        // InsightForge 웹 애플리케이션 - 인라인 스크립트 (v7.0.0 - NEW FILE)
-        // Version: 7.0.0 - NEW FILE - NO CACHE ISSUES
+        // InsightForge 웹 애플리케이션 - 인라인 스크립트 (v12.0.0 - MAIN)
+        // Version: 12.0.0 - MAIN - NO CACHE ISSUES
         const API_BASE = 'https://insightforge-newsbot.vercel.app';
 
         // 전역 변수
@@ -343,13 +181,13 @@
                 // 극강 캐시 버스팅
                 const timestamp = Date.now();
                 const random = Math.random().toString(36).substring(7);
-                const cacheBuster = `?v=7.0.0&t=${timestamp}&r=${random}&cache=busted&force=reload&no-cache=true&new=file`;
+                const cacheBuster = `?v=12.0.0&t=${timestamp}&r=${random}&cache=busted&force=reload&no-cache=true&main=file`;
                 const finalUrl = url + cacheBuster;
                 
-                console.log('🚀 API 호출 (NEW FILE v7.0.0):', finalUrl);
+                console.log('🚀 API 호출 (MAIN v12.0.0):', finalUrl);
                 console.log('✅ localhost:3002 완전 제거됨');
                 console.log('✅ Vercel API 사용');
-                console.log('✅ 새로운 파일명 사용');
+                console.log('✅ 메인 파일명 사용');
                 
                 const response = await fetch(finalUrl, {
                     method: 'GET',
@@ -374,21 +212,24 @@
         // 시도 데이터 로드
         async function loadSidoData() {
             try {
-                console.log('📊 시도 데이터 로드 중... (v7.0.0 - NEW FILE)');
+                console.log('📊 시도 데이터 로드 중... (v12.0.0 - MAIN)');
                 console.log('🔗 API URL:', `${API_BASE}/api/sido`);
-                console.log('🚨 새로운 파일명으로 캐시 완전 우회');
+                console.log('🚨 메인 파일명으로 캐시 완전 우회');
                 console.log('✅ localhost:3002 완전 제거됨');
                 console.log('✅ Vercel 서버리스 함수 정상 작동');
                 
                 const data = await fetchAPI(`${API_BASE}/api/sido`);
+                console.log('📥 API 응답 데이터:', data);
                 
                 if (data && data.sido_list) {
                     allSido = data.sido_list;
                     console.log(`✅ 시도 데이터 로드 완료: ${allSido.length}개`);
+                    console.log('📋 시도 목록:', allSido.map(s => s.sido_name));
                     renderSidoList();
                     updateDashboardStats();
                     showContent();
                 } else {
+                    console.error('❌ 데이터 구조 오류:', data);
                     throw new Error('시도 데이터 구조가 올바르지 않습니다.');
                 }
             } catch (error) {
@@ -400,13 +241,17 @@
         // 시도 목록 렌더링
         function renderSidoList() {
             const container = document.getElementById('sidoList');
-            if (!container) return;
+            if (!container) {
+                console.error('❌ sidoList 컨테이너를 찾을 수 없습니다.');
+                return;
+            }
             
+            console.log('🎨 시도 목록 렌더링 시작:', allSido.length, '개');
             container.innerHTML = '';
             
             allSido.forEach(sido => {
                 const sidoEl = document.createElement('div');
-                sidoEl.className = 'bg-white rounded-lg shadow-md p-4 mb-3 cursor-pointer hover:shadow-lg transition-shadow';
+                sidoEl.className = 'bg-white rounded-lg shadow-md p-4 mb-3 cursor-pointer hover:shadow-lg transition-shadow border border-gray-200';
                 sidoEl.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div>
@@ -420,6 +265,8 @@
                 sidoEl.addEventListener('click', () => toggleSido(sido.code));
                 container.appendChild(sidoEl);
             });
+            
+            console.log('✅ 시도 목록 렌더링 완료');
         }
 
         // 시군구 목록 로드
@@ -575,12 +422,18 @@
             }
         }
 
+        // 랜딩페이지로 이동
+        function goToLanding() {
+            console.log('🚀 랜딩페이지로 이동 중...');
+            window.location.href = './';
+        }
+
         // 초기화
         async function init() {
-            console.log('🚀 InsightForge 웹 애플리케이션 시작 (v7.0.0 - NEW FILE)');
+            console.log('🚀 InsightForge 웹 애플리케이션 시작 (v12.0.0 - MAIN)');
             console.log('✅ localhost:3002 완전 제거됨');
             console.log('✅ Vercel API 사용');
-            console.log('✅ 새로운 파일명 사용');
+            console.log('✅ 메인 파일명 사용');
             console.log('✅ 외부 파일 로드 없음');
             
             showLoading();
