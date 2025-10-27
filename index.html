@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>뉴스봇 - 정치 데이터 분석</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
@@ -714,6 +715,128 @@
             loadData();
             setupSearch();
         });
+=======
+    <title>InsightForge - 정치에 대한 데이터의 편견</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#1E40AF',
+                        accent: '#F59E0B'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- 헤더 -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center mr-4">
+                        <span class="text-white font-bold text-xl">C</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-900">컨텍스트</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="goToAnalysis()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        ContextCHECKER 시작
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- 히어로 섹션 -->
+        <div class="text-center mb-16">
+            <h1 class="text-5xl font-bold text-gray-900 mb-6">
+                정치에 대한 데이터의 편견
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                데이터 기반 정치 분석으로 선거에서 이기는 법을 찾아보세요
+            </p>
+            <div class="flex justify-center space-x-4">
+                <button onclick="goToAnalysis()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium text-lg transition-colors">
+                    ContextCHECKER 시작
+                </button>
+                <button onclick="scrollToFeatures()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-8 py-3 rounded-lg font-medium text-lg transition-colors">
+                    더 알아보기
+                </button>
+            </div>
+        </div>
+
+        <!-- 기능 섹션 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">선거에서 이기는 법</h3>
+                <p class="text-gray-600">데이터 기반 정치 분석으로 선거 전략을 수립하세요</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">지역 데이터 분석</h3>
+                <p class="text-gray-600">전국 17개 시도, 3,827개 지역의 상세 데이터를 제공합니다</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">정치인 분석</h3>
+                <p class="text-gray-600">국회의원, 시장, 구청장 등 정치인 정보를 분석합니다</p>
+            </div>
+        </div>
+
+        <!-- 연락처 섹션 -->
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">문의하기</h2>
+            <p class="text-gray-600 mb-4">궁금한 점이 있으시면 언제든지 연락주세요</p>
+            <a href="mailto:justbuild.pd@gmail.com" class="text-blue-600 hover:text-blue-700 font-medium">
+                justbuild.pd@gmail.com
+            </a>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2024 Context. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 대시보드 페이지로 이동
+        function goToAnalysis() {
+            console.log('🚀 대시보드 페이지로 이동 중...');
+            console.log('🔗 이동할 URL: /dashboard.html');
+            window.location.href = './dashboard.html';
+        }
+
+        // 기능 섹션으로 스크롤
+        function scrollToFeatures() {
+            document.querySelector('.grid').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+>>>>>>> a359c1825076cfba2c986d9b7471dc6f86980ea2
     </script>
 </body>
 </html>
