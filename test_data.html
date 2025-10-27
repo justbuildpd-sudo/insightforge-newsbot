@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>데이터 테스트</title>
+</head>
+<body>
+    <h1>데이터 로드 테스트</h1>
+    <div id="test-results"></div>
+    
+    <script src="./embedded_data.js"></script>
+    <script>
+        const results = document.getElementById("test-results");
+        
+        // allYearsData 테스트
+        if (typeof allYearsData !== "undefined") {
+            results.innerHTML += "<p>✅ allYearsData 로드됨</p>";
+            results.innerHTML += "<p>연도 수: " + Object.keys(allYearsData).length + "</p>";
+        } else {
+            results.innerHTML += "<p>❌ allYearsData 로드 실패</p>";
+        }
+        
+        // electionData 테스트
+        if (typeof electionData !== "undefined") {
+            results.innerHTML += "<p>✅ electionData 로드됨</p>";
+            results.innerHTML += "<p>선거 수: " + electionData.summary.total_elections + "</p>";
+        } else {
+            results.innerHTML += "<p>❌ electionData 로드 실패</p>";
+        }
+    </script>
+</body>
+</html>

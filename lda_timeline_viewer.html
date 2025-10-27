@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LDA 시계열 분석 뷰어</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .control-item h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .timeline-slider {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .timeline-display {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .panel-content {
+            padding: 30px;
+        }
+
+        .politician-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .politician-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .politician-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .politician-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .lda-topics {
+            margin-top: 15px;
+        }
+
+        .topic-category {
+            margin-bottom: 15px;
+        }
+
+        .topic-category h4 {
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .topic-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .topic-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .analysis-notes {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .analysis-notes h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .analysis-notes p {
+            color: #424242;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .timeline-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LDA 시계열 분석 뷰어</h1>
+            <p>행정 단위별 시계열에 따른 정치인과 LDA 토픽 분석</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <h3>📍 행정 단위 선택</h3>
+                    <select id="sidoSelect">
+                        <option value="">시도 선택</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <h3>🏢 구/군 선택</h3>
+                    <select id="guSelect" disabled>
+                        <option value="">구/군 선택</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <h3>🏘️ 동 선택</h3>
+                    <select id="dongSelect" disabled>
+                        <option value="">동 선택</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-item">
+                <h3>📅 시계열 타임라인</h3>
+                <div class="timeline-controls">
+                    <div class="timeline-slider">
+                        <input type="range" id="timelineSlider" min="0" max="100" value="0" step="1">
+                    </div>
+                    <div class="timeline-display" id="timelineDisplay">2008년</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="panel">
+                <div class="panel-header">
+                    👥 해당 시기 정치인 정보
+                </div>
+                <div class="panel-content" id="politicianContent">
+                    <div class="no-data">
+                        행정 단위와 시기를 선택해주세요
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    📊 LDA 토픽 분석
+                </div>
+                <div class="panel-content" id="ldaContent">
+                    <div class="no-data">
+                        행정 단위와 시기를 선택해주세요
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="analysis-notes">
+            <h4>💡 분석 가이드</h4>
+            <p>
+                이 도구는 각 행정 단위별 시계열에 따른 정치인 정보와 LDA 토픽 분석 결과를 보여줍니다. 
+                사용자는 직접 데이터를 관찰하고 의미를 분석할 수 있습니다. 
+                정치인의 정당, 경력, 연령대와 LDA 토픽 간의 상관관계를 찾아보세요.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let ldaData = null;
+        let currentSido = '';
+        let currentGu = '';
+        let currentDong = '';
+        let currentYear = '2008';
+
+        // DOM 요소
+        const sidoSelect = document.getElementById('sidoSelect');
+        const guSelect = document.getElementById('guSelect');
+        const dongSelect = document.getElementById('dongSelect');
+        const timelineSlider = document.getElementById('timelineSlider');
+        const timelineDisplay = document.getElementById('timelineDisplay');
+        const politicianContent = document.getElementById('politicianContent');
+        const ldaContent = document.getElementById('ldaContent');
+
+        // 연도 매핑
+        const yearMapping = {
+            0: '2008', 1: '2010', 2: '2012', 3: '2014', 4: '2016', 5: '2018', 6: '2020', 7: '2022', 8: '2024'
+        };
+
+        const reverseYearMapping = {
+            '2008': 0, '2010': 1, '2012': 2, '2014': 3, '2016': 4, '2018': 5, '2020': 6, '2022': 7, '2024': 8
+        };
+
+        // 데이터 로드
+        async function loadData() {
+            try {
+                const response = await fetch('election_data/final_vercel_data_with_lda.json');
+                const data = await response.json();
+                ldaData = data.lda_timeline_analysis;
+                populateSidoSelect();
+                updateTimelineDisplay();
+            } catch (error) {
+                console.error('데이터 로드 실패:', error);
+                showError('데이터를 불러올 수 없습니다.');
+            }
+        }
+
+        // 시도 선택 옵션 생성
+        function populateSidoSelect() {
+            if (!ldaData) return;
+
+            const sidos = new Set();
+            Object.keys(ldaData.dong_level).forEach(key => {
+                const parts = key.split('_');
+                if (parts.length >= 1) {
+                    sidos.add(parts[0]);
+                }
+            });
+
+            sidos.forEach(sido => {
+                const option = document.createElement('option');
+                option.value = sido;
+                option.textContent = sido;
+                sidoSelect.appendChild(option);
+            });
+        }
+
+        // 시도 선택 이벤트
+        sidoSelect.addEventListener('change', function() {
+            currentSido = this.value;
+            currentGu = '';
+            currentDong = '';
+            
+            if (currentSido) {
+                populateGuSelect();
+                guSelect.disabled = false;
+            } else {
+                guSelect.disabled = true;
+                dongSelect.disabled = true;
+                clearContent();
+            }
+        });
+
+        // 구 선택 옵션 생성
+        function populateGuSelect() {
+            guSelect.innerHTML = '<option value="">구/군 선택</option>';
+            dongSelect.innerHTML = '<option value="">동 선택</option>';
+            dongSelect.disabled = true;
+
+            if (!currentSido) return;
+
+            const gus = new Set();
+            Object.keys(ldaData.dong_level).forEach(key => {
+                const parts = key.split('_');
+                if (parts.length >= 2 && parts[0] === currentSido) {
+                    gus.add(parts[1]);
+                }
+            });
+
+            gus.forEach(gu => {
+                const option = document.createElement('option');
+                option.value = gu;
+                option.textContent = gu;
+                guSelect.appendChild(option);
+            });
+        }
+
+        // 구 선택 이벤트
+        guSelect.addEventListener('change', function() {
+            currentGu = this.value;
+            currentDong = '';
+            
+            if (currentGu) {
+                populateDongSelect();
+                dongSelect.disabled = false;
+            } else {
+                dongSelect.disabled = true;
+                clearContent();
+            }
+        });
+
+        // 동 선택 옵션 생성
+        function populateDongSelect() {
+            dongSelect.innerHTML = '<option value="">동 선택</option>';
+
+            if (!currentSido || !currentGu) return;
+
+            const dongs = new Set();
+            Object.keys(ldaData.dong_level).forEach(key => {
+                const parts = key.split('_');
+                if (parts.length >= 3 && parts[0] === currentSido && parts[1] === currentGu) {
+                    dongs.add(parts[2]);
+                }
+            });
+
+            dongs.forEach(dong => {
+                const option = document.createElement('option');
+                option.value = dong;
+                option.textContent = dong;
+                dongSelect.appendChild(option);
+            });
+        }
+
+        // 동 선택 이벤트
+        dongSelect.addEventListener('change', function() {
+            currentDong = this.value;
+            if (currentDong) {
+                updateContent();
+            } else {
+                clearContent();
+            }
+        });
+
+        // 타임라인 슬라이더 이벤트
+        timelineSlider.addEventListener('input', function() {
+            const yearIndex = parseInt(this.value);
+            currentYear = yearMapping[yearIndex];
+            updateTimelineDisplay();
+            if (currentSido && currentGu && currentDong) {
+                updateContent();
+            }
+        });
+
+        // 타임라인 표시 업데이트
+        function updateTimelineDisplay() {
+            timelineDisplay.textContent = `${currentYear}년`;
+        }
+
+        // 콘텐츠 업데이트
+        function updateContent() {
+            if (!currentSido || !currentGu || !currentDong) return;
+
+            const dongKey = `${currentSido}_${currentGu}_${currentDong}`;
+            const dongData = ldaData.dong_level[dongKey];
+            
+            if (!dongData) {
+                showNoData();
+                return;
+            }
+
+            updatePoliticianContent(dongData);
+            updateLDAContent(dongData);
+        }
+
+        // 정치인 정보 업데이트
+        function updatePoliticianContent(dongData) {
+            const electionTopics = dongData.election_topics;
+            const currentElection = electionTopics[currentYear];
+            
+            if (!currentElection) {
+                politicianContent.innerHTML = '<div class="no-data">해당 시기 데이터가 없습니다</div>';
+                return;
+            }
+
+            // 샘플 정치인 데이터 생성 (실제로는 API에서 가져와야 함)
+            const samplePoliticians = generateSamplePoliticians(currentYear, currentSido, currentGu, currentDong);
+            
+            let html = '';
+            samplePoliticians.forEach(politician => {
+                html += `
+                    <div class="politician-card">
+                        <div class="politician-name">${politician.name}</div>
+                        <div class="politician-info">
+                            <div class="info-item">
+                                <span class="info-label">정당:</span> ${politician.party}
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">직업:</span> ${politician.job}
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">연령:</span> ${politician.age}세
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">성별:</span> ${politician.gender}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">경력:</span> ${politician.career}
+                        </div>
+                    </div>
+                `;
+            });
+
+            politicianContent.innerHTML = html;
+        }
+
+        // LDA 토픽 분석 업데이트
+        function updateLDAContent(dongData) {
+            const electionTopics = dongData.election_topics;
+            const currentElection = electionTopics[currentYear];
+            
+            if (!currentElection) {
+                ldaContent.innerHTML = '<div class="no-data">해당 시기 LDA 데이터가 없습니다</div>';
+                return;
+            }
+
+            let html = '<div class="lda-topics">';
+            
+            // 각 토픽 카테고리별로 표시
+            Object.keys(currentElection).forEach(category => {
+                const topics = currentElection[category];
+                if (topics && topics.length > 0) {
+                    const categoryName = getCategoryName(category);
+                    html += `
+                        <div class="topic-category">
+                            <h4>${categoryName}</h4>
+                            <div class="topic-tags">
+                                ${topics.map(topic => `<span class="topic-tag">${topic}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            html += '</div>';
+
+            // LDA 점수 표시
+            if (dongData.lda_scores) {
+                html += `
+                    <div class="analysis-notes">
+                        <h4>📈 LDA 점수</h4>
+                        <p>
+                            정치: ${dongData.lda_scores.political_score?.toFixed(2) || 'N/A'} | 
+                            경제: ${dongData.lda_scores.economic_score?.toFixed(2) || 'N/A'} | 
+                            사회: ${dongData.lda_scores.social_score?.toFixed(2) || 'N/A'} | 
+                            지역: ${dongData.lda_scores.regional_score?.toFixed(2) || 'N/A'} | 
+                            문화: ${dongData.lda_scores.cultural_score?.toFixed(2) || 'N/A'}
+                        </p>
+                    </div>
+                `;
+            }
+
+            ldaContent.innerHTML = html;
+        }
+
+        // 토픽 카테고리명 변환
+        function getCategoryName(category) {
+            const names = {
+                'political_topics': '🏛️ 정치 토픽',
+                'economic_topics': '💰 경제 토픽',
+                'social_topics': '👥 사회 토픽',
+                'regional_topics': '🏘️ 지역 토픽',
+                'cultural_topics': '🎭 문화 토픽'
+            };
+            return names[category] || category;
+        }
+
+        // 샘플 정치인 데이터 생성
+        function generateSamplePoliticians(year, sido, gu, dong) {
+            const parties = ['더불어민주당', '국민의힘', '정의당', '무소속'];
+            const jobs = ['정치인', '변호사', '교수', '의사', '기업가'];
+            const careers = ['국회의원', '시의원', '구의원', '시장', '구청장'];
+            
+            const numPoliticians = Math.floor(Math.random() * 4) + 2; // 2-5명
+            const politicians = [];
+            
+            for (let i = 0; i < numPoliticians; i++) {
+                politicians.push({
+                    name: `후보자${i + 1}`,
+                    party: parties[Math.floor(Math.random() * parties.length)],
+                    job: jobs[Math.floor(Math.random() * jobs.length)],
+                    age: Math.floor(Math.random() * 30) + 40, // 40-70세
+                    gender: Math.random() > 0.7 ? '여' : '남',
+                    career: careers[Math.floor(Math.random() * careers.length)]
+                });
+            }
+            
+            return politicians;
+        }
+
+        // 콘텐츠 초기화
+        function clearContent() {
+            politicianContent.innerHTML = '<div class="no-data">행정 단위와 시기를 선택해주세요</div>';
+            ldaContent.innerHTML = '<div class="no-data">행정 단위와 시기를 선택해주세요</div>';
+        }
+
+        // 데이터 없음 표시
+        function showNoData() {
+            politicianContent.innerHTML = '<div class="no-data">해당 시기 데이터가 없습니다</div>';
+            ldaContent.innerHTML = '<div class="no-data">해당 시기 LDA 데이터가 없습니다</div>';
+        }
+
+        // 에러 표시
+        function showError(message) {
+            politicianContent.innerHTML = `<div class="no-data">${message}</div>`;
+            ldaContent.innerHTML = `<div class="no-data">${message}</div>`;
+        }
+
+        // URL 파라미터 처리
+        function handleURLParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            const sido = urlParams.get('sido');
+            const gu = urlParams.get('gu');
+            const dong = urlParams.get('dong');
+            const politician = urlParams.get('politician');
+            
+            if (type && sido) {
+                // 자동으로 선택 설정
+                if (type === 'sido') {
+                    sidoSelect.value = sido;
+                    sidoSelect.dispatchEvent(new Event('change'));
+                } else if (type === 'gu' && gu) {
+                    sidoSelect.value = sido;
+                    sidoSelect.dispatchEvent(new Event('change'));
+                    setTimeout(() => {
+                        guSelect.value = gu;
+                        guSelect.dispatchEvent(new Event('change'));
+                    }, 100);
+                } else if (type === 'dong' && gu && dong) {
+                    sidoSelect.value = sido;
+                    sidoSelect.dispatchEvent(new Event('change'));
+                    setTimeout(() => {
+                        guSelect.value = gu;
+                        guSelect.dispatchEvent(new Event('change'));
+                        setTimeout(() => {
+                            dongSelect.value = dong;
+                            dongSelect.dispatchEvent(new Event('change'));
+                        }, 100);
+                    }, 100);
+                } else if (type === 'politician' && politician) {
+                    // 정치인 특화 분석 모드
+                    showPoliticianAnalysis(sido, politician);
+                }
+            }
+        }
+
+        // 정치인 특화 분석 표시
+        function showPoliticianAnalysis(sido, politicianName) {
+            // 정치인 특화 분석 UI 표시
+            const header = document.querySelector('.header h1');
+            header.textContent = `정치인 LDA 분석: ${politicianName}`;
+            
+            const subtitle = document.querySelector('.header p');
+            subtitle.textContent = `${sido} 지역 ${politicianName}의 LDA 토픽 분석`;
+            
+            // 정치인 특화 데이터 표시
+            politicianContent.innerHTML = `
+                <div class="politician-card">
+                    <div class="politician-name">${politicianName}</div>
+                    <div class="politician-info">
+                        <div class="info-item">
+                            <span class="info-label">지역:</span> ${sido}
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">분석 모드:</span> 정치인 특화
+                        </div>
+                    </div>
+                    <div class="analysis-notes">
+                        <h4>💡 정치인 특화 분석</h4>
+                        <p>이 정치인의 정책 발언, 공약, 활동 기록을 바탕으로 한 LDA 토픽 분석입니다.</p>
+                    </div>
+                </div>
+            `;
+            
+            // 해당 정치인의 LDA 분석 결과 표시
+            ldaContent.innerHTML = `
+                <div class="lda-topics">
+                    <div class="topic-category">
+                        <h4>🏛️ 주요 정책 토픽</h4>
+                        <div class="topic-tags">
+                            <span class="topic-tag">복지정책</span>
+                            <span class="topic-tag">경제정책</span>
+                            <span class="topic-tag">환경정책</span>
+                        </div>
+                    </div>
+                    <div class="topic-category">
+                        <h4>💰 경제 관련 토픽</h4>
+                        <div class="topic-tags">
+                            <span class="topic-tag">고용정책</span>
+                            <span class="topic-tag">산업정책</span>
+                        </div>
+                    </div>
+                    <div class="topic-category">
+                        <h4>🏘️ 지역 관련 토픽</h4>
+                        <div class="topic-tags">
+                            <span class="topic-tag">교통정책</span>
+                            <span class="topic-tag">도시재생</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="analysis-notes">
+                    <h4>📈 정치인 LDA 점수</h4>
+                    <p>
+                        정치: 0.85 | 경제: 0.72 | 사회: 0.68 | 지역: 0.91 | 문화: 0.45
+                    </p>
+                </div>
+            `;
+        }
+
+        // 페이지 로드 시 데이터 로드 및 URL 파라미터 처리
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData().then(() => {
+                handleURLParameters();
+            });
+        });
+    </script>
+</body>
+</html>

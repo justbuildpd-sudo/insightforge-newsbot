@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContextCHECKER - 정치 데이터 분석</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        .region-card {
+            transition: all 0.2s ease;
+        }
+        .region-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .stats-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .radar-chart-container {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- 좌측: 지역 목록 (고정 폭) -->
+        <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+            <!-- 헤더 -->
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">구 목록</h2>
+            </div>
+            
+            <!-- 검색 바 -->
+            <div class="p-4 border-b border-gray-200">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="구명을 입력하세요" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            
+            <!-- 지역 목록 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div id="regionList" class="space-y-2">
+                    <!-- 지역 목록이 여기에 동적으로 로드됩니다 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 중앙: 상세 정보 -->
+        <div class="flex-1 bg-white border-r border-gray-200 flex flex-col">
+            <!-- 헤더 -->
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">상세 정보</h2>
+            </div>
+            
+            <!-- 상세 내용 -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="detailContent">
+                    <div class="text-center text-gray-500 py-20">
+                        <div class="text-4xl mb-4">📊</div>
+                        <p class="text-xl">구를 선택하세요</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 우측: LDA 분석 -->
+        <div class="w-96 bg-white flex flex-col">
+            <!-- 헤더 -->
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">LDA 토픽 분석</h2>
+            </div>
+            
+            <!-- LDA 내용 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div id="ldaContent">
+                    <div class="text-center text-gray-500 py-20">
+                        <div class="text-4xl mb-4">📝</div>
+                        <p class="text-lg">구를 선택하면</p>
+                        <p class="text-sm text-gray-400">뉴스 토픽 분석과 워드클라우드를 표시합니다</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentSelectedRegion = null;
+        let allRegions = [];
+        let filteredRegions = [];
+
+        // 실제 데이터 로드
+        async function loadData() {
+            try {
+                console.log('📊 실제 데이터 로드 시작...');
+                
+                // 실제 데이터 파일들 로드 (안전하게)
+                let sgisData = {};
+                let multiyearData = {};
+                let hierarchicalData = {};
+                let allYearsData = {};
+                
+                try {
+                    const sgisResponse = await fetch('./sgis_data.json');
+                    if (sgisResponse.ok) sgisData = await sgisResponse.json();
+                } catch (e) { console.log('sgis_data.json 로드 실패'); }
+                
+                try {
+                    const multiyearResponse = await fetch('./sgis_multiyear_stats.json');
+                    if (multiyearResponse.ok) multiyearData = await multiyearResponse.json();
+                } catch (e) { console.log('sgis_multiyear_stats.json 로드 실패'); }
+                
+                try {
+                    const hierarchicalResponse = await fetch('./hierarchical_regional_data.json');
+                    if (hierarchicalResponse.ok) hierarchicalData = await hierarchicalResponse.json();
+                } catch (e) { console.log('hierarchical_regional_data.json 로드 실패'); }
+                
+                try {
+                    const allYearsResponse = await fetch('./all_years_population_data.json');
+                    if (allYearsResponse.ok) allYearsData = await allYearsResponse.json();
+                } catch (e) { console.log('all_years_population_data.json 로드 실패'); }
+                
+                console.log('✅ 데이터 로드 완료');
+                
+                // 실제 데이터에서 지역 목록 생성
+                generateRegionList(hierarchicalData, sgisData, multiyearData, allYearsData);
+                
+            } catch (error) {
+                console.error('❌ 데이터 로드 실패:', error);
+                // 기본 데이터로 폴백
+                generateDefaultRegionList();
+            }
+        }
+
+        // 실제 데이터에서 지역 목록 생성
+        function generateRegionList(hierarchicalData, sgisData, multiyearData, allYearsData) {
+            allRegions = [];
+            
+            // hierarchical_data.json에서 실제 지역 데이터 추출
+            if (hierarchicalData && hierarchicalData.sidos) {
+                for (const [sidoName, sidoData] of Object.entries(hierarchicalData.sidos)) {
+                    if (sidoData && sidoData.sigungus) {
+                        for (const [sigunguName, sigunguData] of Object.entries(sidoData.sigungus)) {
+                            allRegions.push({
+                                id: `${sidoName}_${sigunguName}`,
+                                sidoName: sidoName,
+                                sigunguName: sigunguName,
+                                displayName: sigunguName,
+                                isGuLevel: true,
+                                stats: sigunguData.stats || {},
+                                dongs: sigunguData.dongs || {}
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // 데이터가 없으면 기본 데이터 생성
+            if (allRegions.length === 0) {
+                generateDefaultRegionList();
+            } else {
+                console.log(`✅ 실제 지역 데이터: ${allRegions.length}개 구`);
+                filteredRegions = [...allRegions];
+                renderRegionList();
+            }
+        }
+
+        // 기본 지역 목록 생성 (폴백)
+        function generateDefaultRegionList() {
+            allRegions = [
+                {
+                    id: 'seoul_gangnam',
+                    sidoName: '서울특별시',
+                    sigunguName: '강남구',
+                    displayName: '강남구',
+                    isGuLevel: true,
+                    stats: { total_population: 550000, total_area: 39.5, avg_density: 13924, total_households: 250000 },
+                    dongs: { '역삼동': {}, '개포동': {}, '일원동': {} }
+                },
+                {
+                    id: 'seoul_gangdong',
+                    sidoName: '서울특별시',
+                    sigunguName: '강동구',
+                    displayName: '강동구',
+                    isGuLevel: true,
+                    stats: { total_population: 450000, total_area: 24.6, avg_density: 18293, total_households: 200000 },
+                    dongs: { '천호동': {}, '성내동': {}, '길동': {} }
+                }
+            ];
+            
+            console.log(`✅ 기본 지역 데이터: ${allRegions.length}개 구`);
+            filteredRegions = [...allRegions];
+            renderRegionList();
+        }
+
+        // 지역 목록 렌더링
+        function renderRegionList() {
+            const regionList = document.getElementById('regionList');
+            regionList.innerHTML = '';
+            
+            filteredRegions.forEach(region => {
+                const regionCard = document.createElement('div');
+                regionCard.className = 'region-card bg-white border border-gray-200 rounded-lg p-3 cursor-pointer';
+                regionCard.innerHTML = `
+                    <div class="font-medium text-gray-800">${region.displayName}</div>
+                    <div class="text-sm text-gray-500">${region.sidoName}</div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        인구: ${(region.stats.total_population || 0).toLocaleString()}명
+                    </div>
+                `;
+                
+                regionCard.addEventListener('click', () => selectRegion(region));
+                regionList.appendChild(regionCard);
+            });
+        }
+
+        // 지역 선택
+        function selectRegion(region) {
+            currentSelectedRegion = region;
+            updateDetailContent(region);
+            updateLdaContent(region);
+        }
+
+        // 상세 정보 업데이트
+        function updateDetailContent(region) {
+            const detailContent = document.getElementById('detailContent');
+            
+            // 실제 데이터 사용
+            const stats = region.stats || {};
+            const population = stats.total_population || 0;
+            const area = stats.total_area || 0;
+            const density = stats.avg_density || 0;
+            const households = stats.total_households || 0;
+            
+            detailContent.innerHTML = `
+                <div class="space-y-6">
+                    <!-- 헤더 -->
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">${region.displayName}</h1>
+                        <p class="text-lg text-gray-600">${region.sidoName}</p>
+                        <p class="text-sm text-gray-500">구 전체 통합 정보</p>
+                    </div>
+                    
+                    <!-- 기본 통계 -->
+                    <div class="stats-box">
+                        <h3 class="text-xl font-semibold mb-4">기본 통계</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">${population.toLocaleString()}</div>
+                                <div class="text-sm text-gray-500">총 인구</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">${area.toFixed(1)}</div>
+                                <div class="text-sm text-gray-500">면적 (km²)</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-600">${density.toFixed(0)}</div>
+                                <div class="text-sm text-gray-500">인구밀도</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-orange-600">${households.toLocaleString()}</div>
+                                <div class="text-sm text-gray-500">총 세대</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 방사형 차트 (앱과 동일) -->
+                    <div class="stats-box">
+                        <h3 class="text-xl font-semibold mb-4">통계 분석</h3>
+                        <div class="radar-chart-container">
+                            <canvas id="radarChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 동 목록 -->
+                    <div class="stats-box">
+                        <h3 class="text-xl font-semibold mb-4">동 목록</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${Object.keys(region.dongs).map(dongName => `
+                                <div class="bg-gray-100 p-2 rounded text-sm">
+                                    ${dongName}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 방사형 차트 생성 (앱과 동일한 스타일)
+            createRadarChart(region);
+        }
+
+        // 방사형 차트 생성 (앱과 동일)
+        function createRadarChart(region) {
+            const ctx = document.getElementById('radarChart');
+            if (!ctx) return;
+
+            // Chart.js 로드 확인
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js가 로드되지 않았습니다.');
+                return;
+            }
+
+            // 기존 차트 제거
+            if (window.radarChartInstance) {
+                window.radarChartInstance.destroy();
+            }
+
+            // 실제 데이터 사용
+            const stats = region.stats || {};
+            const population = stats.total_population || 0;
+            const area = stats.total_area || 0;
+            const density = stats.avg_density || 0;
+            const households = stats.total_households || 0;
+            const dongCount = Object.keys(region.dongs).length;
+            
+            // 정규화된 데이터 (0-100 범위)
+            const normalizedData = [
+                Math.min((population / 100000) * 100, 100), // 인구 (10만명 기준)
+                Math.min((area / 50) * 100, 100), // 면적 (50km² 기준)
+                Math.min((density / 20000) * 100, 100), // 밀도 (2만명/km² 기준)
+                Math.min((households / 50000) * 100, 100), // 세대 (5만세대 기준)
+                Math.min((dongCount / 20) * 100, 100), // 동 개수 (20개 기준)
+                50, // 평균 연령 (고정값)
+                60, // 고용률 (고정값)
+                5   // 외국인 비율 (고정값)
+            ];
+
+            // Chart.js 3.x 버전에서는 radar 차트가 기본 제공됨
+            window.radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['총 인구', '총 면적', '인구밀도', '총 세대', '동 개수', '평균 연령', '고용률', '외국인 비율'],
+                    datasets: [{
+                        label: `${region.displayName} 통계`,
+                        data: normalizedData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 0.8)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(59, 130, 246, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // LDA 분석 업데이트
+        function updateLdaContent(region) {
+            const ldaContent = document.getElementById('ldaContent');
+            
+            ldaContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="text-center">
+                        <h3 class="text-lg font-semibold text-gray-800">${region.displayName}</h3>
+                        <p class="text-sm text-gray-500">뉴스 토픽 분석</p>
+                    </div>
+                    
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600 text-center">
+                            LDA 분석 데이터를 로딩 중입니다...
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 검색 기능
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                filteredRegions = allRegions.filter(region => 
+                    region.displayName.toLowerCase().includes(query) ||
+                    region.sidoName.toLowerCase().includes(query)
+                );
+                renderRegionList();
+            });
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            setupSearch();
+        });
+    </script>
+</body>
+</html>

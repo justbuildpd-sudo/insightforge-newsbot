@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContextCHECKER - 정치 데이터 분석</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .region-card {
+            transition: all 0.2s ease;
+        }
+        .region-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .lda-button {
+            height: 32px;
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .politician-lda-button {
+            height: 28px;
+            padding: 2px 6px;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 헤더 -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-900">ContextCHECKER</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">정치에 대한 데이터의 편견</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-12 gap-6 h-screen">
+            
+            <!-- 좌측 패널: 지역 선택 -->
+            <div class="col-span-3 bg-white rounded-lg shadow-sm border">
+                <div class="p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-900">지역 선택</h2>
+                </div>
+                <div class="flex-1 overflow-y-auto" id="leftPanel">
+                    <!-- 지역 목록이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </div>
+
+            <!-- 중앙 패널: 상세 정보 -->
+            <div class="col-span-6 bg-white rounded-lg shadow-sm border">
+                <div class="p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-900">상세 정보</h2>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4" id="detailContent">
+                    <div class="text-center text-gray-500 py-8">
+                        지역을 선택하세요
+                    </div>
+                </div>
+            </div>
+
+            <!-- 우측 패널: LDA 분석 -->
+            <div class="col-span-3 bg-white rounded-lg shadow-sm border">
+                <div class="p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-900">LDA 분석</h2>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4" id="ldaContent">
+                    <div class="text-center text-gray-500 py-8">
+                        지역을 선택하세요
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentSelectedRegion = null;
+        let hierarchicalData = null;
+        let electionData = null;
+        let newsData = null;
+
+        // 데이터 로드
+        async function loadData() {
+            try {
+                console.log('📊 데이터 로드 시작...');
+                
+                // 계층적 지역 데이터 로드
+                const hierarchicalResponse = await fetch('./dashboard_hierarchical_data.json');
+                hierarchicalData = await hierarchicalResponse.json();
+                console.log('✅ 계층적 지역 데이터 로드 완료');
+
+                // 선거 데이터 로드
+                const electionResponse = await fetch('./election_data/final_vercel_data_with_lda.json');
+                electionData = await electionResponse.json();
+                console.log('✅ 선거 데이터 로드 완료');
+
+                // 뉴스 데이터 로드
+                const newsResponse = await fetch('./news_data/summary.json');
+                newsData = await newsResponse.json();
+                console.log('✅ 뉴스 데이터 로드 완료');
+
+                // 시도 목록 렌더링
+                renderSidoList();
+                
+            } catch (error) {
+                console.error('❌ 데이터 로드 실패:', error);
+                document.getElementById('detailContent').innerHTML = `
+                    <div class="text-center text-red-500 py-8">
+                        데이터 로드에 실패했습니다.<br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        // 시도 목록 렌더링
+        function renderSidoList() {
+            const leftPanel = document.getElementById('leftPanel');
+            if (!hierarchicalData || !hierarchicalData.sidos) {
+                leftPanel.innerHTML = '<div class="p-4 text-red-500">데이터를 불러올 수 없습니다.</div>';
+                return;
+            }
+
+            const sidos = Object.keys(hierarchicalData.sidos);
+            leftPanel.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">시도</h3>
+                    <div class="space-y-2">
+                        ${sidos.map(sido => `
+                            <div class="region-card p-3 cursor-pointer hover:bg-blue-50 border border-gray-200 rounded-lg" onclick="selectSido('${sido}')">
+                                <div class="font-medium text-gray-800">${sido}</div>
+                                <div class="text-sm text-gray-500">시도</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 시도 선택
+        function selectSido(sidoName) {
+            console.log(`📍 시도 선택: ${sidoName}`);
+            
+            // 시군구 목록 렌더링
+            renderSigunguList(sidoName);
+            
+            // 상세 정보 업데이트
+            updateDetailContent(sidoName, 'sido');
+            
+            // LDA 분석 업데이트
+            updateLDAContent(sidoName, 'sido');
+            
+            currentSelectedRegion = sidoName;
+        }
+
+        // 시군구 목록 렌더링
+        function renderSigunguList(sidoName) {
+            const leftPanel = document.getElementById('leftPanel');
+            const sigungus = Object.keys(hierarchicalData.sidos[sidoName].sigungus);
+            
+            leftPanel.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">시도</h3>
+                    <div class="space-y-2 mb-4">
+                        <div class="region-card p-3 cursor-pointer bg-blue-50 border border-blue-200 rounded-lg" onclick="selectSido('${sidoName}')">
+                            <div class="font-medium text-blue-800">${sidoName}</div>
+                            <div class="text-sm text-blue-600">시도 (선택됨)</div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">시군구</h3>
+                    <div class="space-y-2">
+                        ${sigungus.map(sigungu => `
+                            <div class="region-card p-3 cursor-pointer hover:bg-green-50 border border-gray-200 rounded-lg" onclick="selectSigungu('${sigungu}', '${sidoName}')">
+                                <div class="font-medium text-gray-800">${sigungu}</div>
+                                <div class="text-sm text-gray-500">시군구</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 시군구 선택
+        function selectSigungu(sigunguName, sidoName) {
+            console.log(`📍 시군구 선택: ${sigunguName}`);
+            
+            // 동 목록 렌더링
+            renderDongList(sigunguName, sidoName);
+            
+            // 상세 정보 업데이트
+            updateDetailContent(sigunguName, 'sigungu', sidoName);
+            
+            // LDA 분석 업데이트
+            updateLDAContent(sigunguName, 'sigungu');
+            
+            currentSelectedRegion = sigunguName;
+        }
+
+        // 동 목록 렌더링
+        function renderDongList(sigunguName, sidoName) {
+            const leftPanel = document.getElementById('leftPanel');
+            const dongs = Object.keys(hierarchicalData.sidos[sidoName].sigungus[sigunguName].dongs);
+            
+            leftPanel.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">시도</h3>
+                    <div class="space-y-2 mb-4">
+                        <div class="region-card p-3 cursor-pointer hover:bg-blue-50 border border-gray-200 rounded-lg" onclick="selectSido('${sidoName}')">
+                            <div class="font-medium text-gray-800">${sidoName}</div>
+                            <div class="text-sm text-gray-500">시도</div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">시군구</h3>
+                    <div class="space-y-2 mb-4">
+                        <div class="region-card p-3 cursor-pointer bg-green-50 border border-green-200 rounded-lg" onclick="selectSigungu('${sigunguName}', '${sidoName}')">
+                            <div class="font-medium text-green-800">${sigunguName}</div>
+                            <div class="text-sm text-green-600">시군구 (선택됨)</div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">동</h3>
+                    <div class="space-y-2">
+                        ${dongs.map(dong => `
+                            <div class="region-card p-3 cursor-pointer hover:bg-purple-50 border border-gray-200 rounded-lg" onclick="selectDong('${dong}', '${sigunguName}', '${sidoName}')">
+                                <div class="font-medium text-gray-800">${dong}</div>
+                                <div class="text-sm text-gray-500">동</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 동 선택
+        function selectDong(dongName, sigunguName, sidoName) {
+            console.log(`📍 동 선택: ${dongName}`);
+            
+            // 상세 정보 업데이트
+            updateDetailContent(dongName, 'dong', sidoName, sigunguName);
+            
+            // LDA 분석 업데이트
+            updateLDAContent(dongName, 'dong');
+            
+            currentSelectedRegion = dongName;
+        }
+
+        // 상세 정보 업데이트
+        function updateDetailContent(regionName, level, sidoName = null, sigunguName = null) {
+            const detailContent = document.getElementById('detailContent');
+            
+            let regionData = null;
+            let regionType = '';
+            
+            if (level === 'sido') {
+                regionData = hierarchicalData.sidos[regionName];
+                regionType = '시도';
+            } else if (level === 'sigungu') {
+                regionData = hierarchicalData.sidos[sidoName].sigungus[regionName];
+                regionType = '시군구';
+            } else if (level === 'dong') {
+                regionData = hierarchicalData.sidos[sidoName].sigungus[sigunguName].dongs[regionName];
+                regionType = '동';
+            }
+
+            if (!regionData) {
+                detailContent.innerHTML = '<div class="text-center text-red-500 py-8">데이터를 찾을 수 없습니다.</div>';
+                return;
+            }
+
+            const stats = regionData.statistics || {};
+            
+            detailContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-blue-50 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-4">${regionName} 상세 정보</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-blue-700">인구</p>
+                                <p class="text-2xl font-bold text-blue-900">${(stats.total_population || 0).toLocaleString()}명</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-blue-700">면적</p>
+                                <p class="text-2xl font-bold text-blue-900">${(stats.total_area || 0).toFixed(1)}km²</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">지역 정보</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">지역명</span>
+                                <span class="font-medium text-gray-800">${regionName}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">행정구역</span>
+                                <span class="font-medium text-gray-800">${regionType}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">인구</span>
+                                <span class="font-medium text-gray-800">${(stats.total_population || 0).toLocaleString()}명</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">면적</span>
+                                <span class="font-medium text-gray-800">${(stats.total_area || 0).toFixed(1)}km²</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">인구밀도</span>
+                                <span class="font-medium text-gray-800">${(stats.avg_density || 0).toFixed(0)}명/km²</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-50 p-6 rounded-lg">
+                        <h4 class="text-lg font-semibold text-green-900 mb-4">정치인 정보</h4>
+                        <div class="text-center text-gray-500 py-4">
+                            선거 데이터 로딩 중...
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 선거 데이터 로드 및 표시
+            loadElectionData(regionName, level, sidoName, sigunguName);
+        }
+
+        // 선거 데이터 로드
+        function loadElectionData(regionName, level, sidoName = null, sigunguName = null) {
+            if (!electionData || !electionData.elections) return;
+
+            // 해당 지역의 선거 데이터 찾기
+            let regionElections = [];
+            
+            electionData.elections.forEach(election => {
+                if (level === 'sido' && election.regions[regionName]) {
+                    regionElections.push({
+                        election: election,
+                        region: election.regions[regionName]
+                    });
+                } else if (level === 'sigungu' && election.regions[sidoName] && election.regions[sidoName].sigungus && election.regions[sidoName].sigungus[regionName]) {
+                    regionElections.push({
+                        election: election,
+                        region: election.regions[sidoName].sigungus[regionName]
+                    });
+                }
+            });
+
+            if (regionElections.length === 0) {
+                document.querySelector('.bg-green-50 .text-center').innerHTML = '선거 데이터가 없습니다.';
+                return;
+            }
+
+            // 최신 선거 데이터 표시
+            const latestElection = regionElections[regionElections.length - 1];
+            const candidates = latestElection.region.candidates || [];
+            
+            const politiciansHtml = candidates.slice(0, 4).map(candidate => `
+                <div class="bg-white p-4 rounded-lg border-l-4 border-green-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm text-green-700">${candidate.position || '정치인'}</p>
+                        <span class="text-xs px-2 py-1 rounded ${candidate.elected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${candidate.elected ? '당선' : '낙선'}</span>
+                    </div>
+                    <p class="font-semibold text-green-900">${candidate.name}</p>
+                    <p class="text-xs text-green-600">${candidate.party || '무소속'}</p>
+                    <p class="text-xs text-gray-500 mt-1">임기: ${candidate.term || '정보없음'}</p>
+                </div>
+            `).join('');
+
+            document.querySelector('.bg-green-50 .text-center').innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${politiciansHtml}
+                </div>
+            `;
+        }
+
+        // LDA 분석 업데이트
+        function updateLDAContent(regionName, level) {
+            const ldaContent = document.getElementById('ldaContent');
+            
+            // 뉴스 데이터에서 해당 지역 찾기
+            let regionNewsData = null;
+            if (newsData && newsData.gu_summary) {
+                regionNewsData = newsData.gu_summary[regionName];
+            }
+
+            if (!regionNewsData) {
+                ldaContent.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        LDA 분석 데이터가 없습니다.<br>
+                        <small>시놀로지에서 수집 중...</small>
+                    </div>
+                `;
+                return;
+            }
+
+            const topKeywords = regionNewsData.top_keywords || [];
+            
+            ldaContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-purple-900 mb-3">${regionName} LDA 분석</h3>
+                        <div class="text-sm text-purple-700 mb-3">
+                            뉴스 기사: ${regionNewsData.news_count || 0}건
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">주요 키워드</h4>
+                        <div class="space-y-2">
+                            ${topKeywords.slice(0, 10).map((keyword, index) => `
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-700">${keyword[0]}</span>
+                                    <span class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded">${keyword[1]}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button class="lda-button bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors" onclick="fetchLdaAnalysisFromSynology('${regionName}')">
+                            📊 상세 LDA 분석
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 시놀로지에서 LDA 분석 가져오기
+        function fetchLdaAnalysisFromSynology(regionName) {
+            console.log(`🔍 시놀로지에서 ${regionName} LDA 분석 요청`);
+            
+            // 실제 구현에서는 시놀로지 API 호출
+            alert(`${regionName}의 상세 LDA 분석을 시놀로지에서 가져오는 중...`);
+        }
+
+        // 페이지 로드 시 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 ContextCHECKER 웹 애플리케이션 시작');
+            loadData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>데이터 테스트</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>데이터 로드 테스트</h1>
+    <div id="test-results"></div>
+    
+    <script src="./embedded_data.js"></script>
+    <script>
+        const results = document.getElementById("test-results");
+        
+        function addResult(message, type = "info") {
+            const p = document.createElement("p");
+            p.className = type;
+            p.textContent = message;
+            results.appendChild(p);
+        }
+        
+        // allYearsData 테스트
+        try {
+            if (typeof allYearsData !== "undefined") {
+                addResult("✅ allYearsData 로드됨", "success");
+                addResult("연도 수: " + Object.keys(allYearsData).length, "info");
+                
+                // 각 연도별 데이터 개수 확인
+                Object.keys(allYearsData).forEach(year => {
+                    addResult("  " + year + "년: " + Object.keys(allYearsData[year]).length + "개 지역", "info");
+                });
+            } else {
+                addResult("❌ allYearsData 로드 실패", "error");
+            }
+        } catch (e) {
+            addResult("❌ allYearsData 오류: " + e.message, "error");
+        }
+        
+        // electionData 테스트
+        try {
+            if (typeof electionData !== "undefined") {
+                addResult("✅ electionData 로드됨", "success");
+                addResult("선거 수: " + electionData.summary.total_elections, "info");
+                addResult("후보자 수: " + electionData.summary.total_candidates, "info");
+                addResult("지역 수: " + electionData.summary.total_regions, "info");
+                
+                // 선거 목록 확인
+                addResult("선거 목록:", "info");
+                electionData.elections.forEach((election, index) => {
+                    addResult("  " + (index + 1) + ". " + election.election_name + " (" + election.election_id + ")", "info");
+                });
+            } else {
+                addResult("❌ electionData 로드 실패", "error");
+            }
+        } catch (e) {
+            addResult("❌ electionData 오류: " + e.message, "error");
+        }
+    </script>
+</body>
+</html>

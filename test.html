@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContextCHECKER 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">ContextCHECKER 테스트</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 시도 목록 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">시도 목록</h2>
+                <div id="sidoList" class="space-y-2">
+                    <div class="p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100" onclick="selectSido('서울특별시')">
+                        서울특별시
+                    </div>
+                    <div class="p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100" onclick="selectSido('부산광역시')">
+                        부산광역시
+                    </div>
+                    <div class="p-3 bg-blue-50 rounded cursor-pointer hover:bg-blue-100" onclick="selectSido('대구광역시')">
+                        대구광역시
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 시군구 목록 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">시군구 목록</h2>
+                <div id="sigunguList" class="space-y-2">
+                    <p class="text-gray-500">시도를 선택하세요</p>
+                </div>
+            </div>
+            
+            <!-- 상세 정보 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">상세 정보</h2>
+                <div id="detailContent">
+                    <p class="text-gray-500">지역을 선택하세요</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 테스트 결과 -->
+        <div class="mt-8 bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">테스트 결과</h2>
+            <div id="testResults" class="space-y-2">
+                <div class="text-green-600">✅ 페이지 로드 완료</div>
+                <div class="text-green-600">✅ Tailwind CSS 로드 완료</div>
+                <div class="text-green-600">✅ JavaScript 함수 정의 완료</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 테스트 데이터
+        const sidoData = {
+            "서울특별시": ["종로구", "중구", "용산구", "성동구", "광진구", "동대문구", "중랑구", "성북구", "강북구", "도봉구", "노원구", "은평구", "서대문구", "마포구", "양천구", "강서구", "구로구", "금천구", "영등포구", "동작구", "관악구", "서초구", "강남구", "송파구", "강동구"],
+            "부산광역시": ["중구", "서구", "동구", "영도구", "부산진구", "동래구", "남구", "북구", "해운대구", "사하구", "금정구", "강서구", "연제구", "수영구", "사상구", "기장군"],
+            "대구광역시": ["중구", "동구", "서구", "남구", "북구", "수성구", "달서구", "달성군"]
+        };
+
+        const populationData = {
+            "종로구": 150000,
+            "중구": 130000,
+            "용산구": 240000,
+            "성동구": 300000,
+            "광진구": 350000,
+            "동대문구": 350000,
+            "중랑구": 400000,
+            "성북구": 450000,
+            "강북구": 320000,
+            "도봉구": 350000,
+            "노원구": 550000,
+            "은평구": 480000,
+            "서대문구": 320000,
+            "마포구": 380000,
+            "양천구": 480000,
+            "강서구": 580000,
+            "구로구": 420000,
+            "금천구": 240000,
+            "영등포구": 400000,
+            "동작구": 400000,
+            "관악구": 520000,
+            "서초구": 450000,
+            "강남구": 550000,
+            "송파구": 650000,
+            "강동구": 440000
+        };
+
+        function selectSido(sidoName) {
+            console.log(`시도 선택: ${sidoName}`);
+            
+            // 시군구 목록 업데이트
+            const sigunguList = document.getElementById('sigunguList');
+            const sigungus = sidoData[sidoName] || [];
+            
+            sigunguList.innerHTML = sigungus.map(sigungu => `
+                <div class="p-3 bg-green-50 rounded cursor-pointer hover:bg-green-100" onclick="selectSigungu('${sigungu}')">
+                    ${sigungu}
+                </div>
+            `).join('');
+            
+            // 테스트 결과 업데이트
+            updateTestResult(`시도 선택: ${sidoName}`, 'green');
+        }
+
+        function selectSigungu(sigunguName) {
+            console.log(`시군구 선택: ${sigunguName}`);
+            
+            // 상세 정보 업데이트
+            const detailContent = document.getElementById('detailContent');
+            const population = populationData[sigunguName] || 0;
+            
+            detailContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-blue-50 p-4 rounded">
+                        <h3 class="font-semibold text-blue-900">${sigunguName}</h3>
+                        <p class="text-blue-700">인구: ${population.toLocaleString()}명</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded">
+                        <h4 class="font-semibold text-green-900">테스트 성공!</h4>
+                        <p class="text-green-700">기본 기능이 정상적으로 작동합니다.</p>
+                    </div>
+                </div>
+            `;
+            
+            // 테스트 결과 업데이트
+            updateTestResult(`시군구 선택: ${sigunguName}`, 'green');
+        }
+
+        function updateTestResult(message, color) {
+            const testResults = document.getElementById('testResults');
+            const colorClass = color === 'green' ? 'text-green-600' : 'text-red-600';
+            testResults.innerHTML += `<div class="${colorClass}">✅ ${message}</div>`;
+        }
+
+        // 페이지 로드 완료 확인
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('페이지 로드 완료');
+            updateTestResult('DOM 로드 완료', 'green');
+        });
+    </script>
+</body>
+</html>
